@@ -1,12 +1,23 @@
 ---
 title: "A guide to Bayesian proportion tests with R and {brms}"
 subtitle: "Using data from the UK Public Opinion of Forestry 2023 survey"
+description: "Guide"
 author: "Si Maxwell"
 affiliation: "Forest Research"
-format: html
-editor: source
+date: last-modified
+date-format: "D MMMM YYYY"
+title-block-banner: "white"
+title-block-banner-color: "black"
+format: 
+  html:
+    linkcolor: "#6c207f"
+    toc: true
+    toc-location: left
+    toc-title: "Contents"
+editor: visual
 editor_options: 
   chunk_output_type: console
+---
 ---
 
 # Introduction
