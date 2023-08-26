@@ -1,9 +1,8 @@
 ---
 title: "A guide to Bayesian proportion tests with R and {brms}"
 subtitle: "Using data from the UK Public Opinion of Forestry 2023 survey"
-description: "Guide"
+description: "Forest Research"
 author: "Si Maxwell"
-affiliation: "Forest Research"
 date: last-modified
 date-format: "D MMMM YYYY"
 title-block-banner: "white"
@@ -18,39 +17,48 @@ editor: visual
 editor_options: 
   chunk_output_type: console
 ---
----
+
+------------------------------------------------------------------------
 
 # Introduction
 
-This report is a tool to help me and others at Forest Research better understand Bayesian inference. It is a guide to Bayesian proportion tests in R using the {brms} package and Forest Research's Public Opinion of Forestry 2023: UK survey. The survey asked 11,055 adults (aged 16+) in the UK a range of questions on forestry and forestry-related topics. Here we will explore the proportions of respondents who reported visiting woodland in the last few years and those that support increased woodland creation (afforestation) in response to climate change.
+This report is a development opportunity for me and a guide for others at Forest Research to better understand Bayesian inference. In it I explore Bayesian proportion tests in R using the {brms} package and data from the Public Opinion of Forestry 2023: UK survey, conducted by Forest Research. The survey asked 11,055 adults (aged 16+) in the UK a range of questions on forestry and forestry-related issues. Here we will explore the proportion of male and female respondents who visited woodland in the last few years and that support new woodland creation (afforestation) in response to the threat of climate change.
 
-The report is heavily (!) based on the fantastic blog post [A guide to Bayesian proportion tests with R and {brms}](https://www.andrewheiss.com/blog/2023/05/15/fancy-bayes-diffs-props/) by Andrew Heiss, assistant professor at Georgia State University (published 15 May 2023). This is the first thing I have read where I have come away feeling like I have understand a little about Bayesian inference.
+The report is heavily (!) based on the fantastic blog post [A guide to Bayesian proportion tests with R and {brms}](https://www.andrewheiss.com/blog/2023/05/15/fancy-bayes-diffs-props/) by Andrew Heiss, assistant professor at Georgia State University (published 15 May 2023). Andrew's blog was, in turn, based on a [blog post](https://www.sumsar.net/blog/2014/06/bayesian-first-aid-prop-test/) and R package by data scientist Rasmus Bååth (published 27 June 2014). Andrew's blog is the first thing I've read where I feel like I actually understood the basics of Bayesian inference and how I might perform an analysis in a Bayesian framework.
 
-The first thing we need to do is load all the necessary packages for the analysis.
+# Setup
+
+The first thing we need to do is load all the necessary packages for the analysis:
 
 ```{r}
 #| label: pkg-load
-#| warning: false
+#| message: false
 library(tidyverse)
-library(glue)
 library(scales)
+library(glue)
 library(gt)
 library(brms)
 library(tidybayes)
 library(ggdist)
+library(ggGSS) # devtools::install_github("simaxwell/ggGSS")
 library(parameters)
+```
+
+And a handy function for formatting percent point differences:
+
+```{r}
+#| label: src
+label_pp <- label_number(accuracy = 1,
+                         scale = 100, 
+                         suffix = " pp")
 ```
 
 # Data wrangling and exploration
 
-The first question we are going to explore is labelled KFW_Q1a in YouGov spreadsheet and reads:
-
-> In the last few years have you ever visited forests or woodlands for walks, picnics or other recreation?
-
-To explore the results we need to load in the data. As the data set is nice and small, it's easy enough to write it out manually. For reference, the data come from the the [raw spreadsheet supplied by YouGov](https://www.forestresearch.gov.uk/tools-and-resources/statistics/statistics-by-topic/public-opinion-of-forestry/), the market research company that conducted the survey on behalf of Forest Research.
+To explore the results we need to load in the data. As both data sets are nice and small, it's easy enough to write it out manually. For reference, the data come from the [detailed spreadsheet supplied by YouGov](https://www.forestresearch.gov.uk/tools-and-resources/statistics/statistics-by-topic/public-opinion-of-forestry/), the market research company that conducted the survey on behalf of Forest Research.
 
 ```{r}
-#| label: data-entry
+#| label: q1-data-entry
 q1_raw <- tribble(
   ~gender, ~n, ~total,
   "Female", 4295.632, 5693.3235,
@@ -58,7 +66,58 @@ q1_raw <- tribble(
 )
 ```
 
-We are going to explore the difference in the proportions shown in blue in Table 1.
+```{r}
+#| label: q2-data-entry
+q2_raw <- tribble(
+  # ...
+)
+```
+
+# The questions
+
+The aim of this article is to illustrate the logic of Bayesian proportion tests using data from the UK Public Opinion of Forestry Survey 2023. To do this we will explore three questions:
+
+1. Is the proportion of women that visited woodland in the last few years higher than the proportion of men?
+2.  Is there a difference between the proportion of men and women that support afforestation as a climate change mitigation strategy?
+3. Does support for afforestation as a climate change mitigation strategy vary among the UK population?
+
+The first question we are going to explore is labelled KFW_Q1a in the YouGov spreadsheet. The original question asked to respondents reads:
+
+> In the last few years have you ever visited forests or woodlands for walks, picnics or other recreation?
+
+Respondents could select one of three options:
+
+1. Yes, I have,
+2. No, I haven't, and
+3. Don't know.
+
+We're interested in the proportion that answered "yes, I have".
+
+[What have I done with the DKs?]
+
+The second question we are going to explore is labelled SFW_Q14_2 in the YouGov spreadsheet. All respondents were asked the following question:
+
+> Thinking about managing UK forests and woodlands in response to climate change, to what extent do you agree or disagree with the following statement: "A lot more trees should be planted."
+
+With this question we are going to look at both the difference between men and women *and* the population as a whole.
+
+In order to reduce the number of possible answers and in turn make the analysis easier to follow, I have transformed the data. First, I have collapsed 4 answers into 2 (in order to explore net support, i.e., all those that agree/disagree irrespective of the strength of the support) and renamed one. Second, "don't know" responses have been removed (after the calculation of the proportions).
+
+The new options are:
+
+-   Agree = "strongly agree" + "tend to agree"
+-   Neither = "Neither agree nor disagree"
+-   Disagree = "strongly disagree" + "tend to disagree"
+
+For question 2, we will look at the difference between men and women; for question 3, we will look at the difference between "agree", "neither" and "disagree" for all respondents.
+
+Let's start with question 1.
+
+# Question 1: woodland engagement among male and female respondents
+
+...
+
+For our first question, we want to know if there is a substantial difference in the proportion of woodland visitors that are male and the proportion of woodland visitors that are female, or whether the difference between them is zero (shown in blue in Table 1).
 
 ```{r}
 #| include: false
@@ -90,17 +149,8 @@ table1 |>
               row_group.font.weight = "bold") |> 
   tab_style(
     style = list(
-      cell_fill(color = colorspace::lighten("#CD8A39", 0.7)),
-      cell_text(color = "#CD8A39", weight = "bold")
-    ),
-    locations = list(
-      cells_body(columns = "label", rows = c(1, 2))
-    )
-  ) %>% 
-  tab_style(
-    style = list(
-      cell_fill(color = colorspace::lighten("#009DDC", 0.8)),
-      cell_text(color = "#009DDC", weight = "bold")
+      cell_fill(color = colorspace::lighten("#12436D", 0.8)),
+      cell_text(color = "#12436D", weight = "bold")
     ),
     locations = list(
       cells_body(columns = 2, rows = 1:2)
@@ -108,26 +158,15 @@ table1 |>
   )
 ```
 
-# The questions
-
-The aim of this article is to illustrate the logic of Bayesian proportion tests using data from the UK Public Opinion of Forestry Survey 2023 by answering two questions:
-
-1. Is the proportion woodland visitors higher among female respondents than male respondents? (Shown in blue in Table 1.)
-2. Do adults in the UK vary in their support for woodland creation as a climate change mitigation strategy? (Shown in orange in Table x.)
-
-## Question 1: woodland engagement among male vs. female respondents
-
-...
-
-For our first question, we want to know if there is a substantial difference in the proportion of woodland visitors among male and female respondents, or whether the difference between them is zero (in Table 1).
-
 In formal mathematical notation, we will call this the estimand $\theta$, which is the difference between the two proportions $\pi$:
 
 $$
 \theta = \pi_{\text{woodland visitor}_{\text{female}}} - \pi_{\text{woodland visitor}_{\text{male}}}
 $$
 
-### Classical frequentist way
+Before we begin our Bayesian analysis, let's take a look at the classical frequentist way of performing and interpreted proportion tests in R.
+
+## Classical frequentist way
 
 ...
 
@@ -152,7 +191,7 @@ We can now pass `q1_matrix` to `prop.test()`:
 prop.test(q1_matrix)
 ```
 
-We have proportions that are the same as in Table 1 (75.5% / 72.6%) and the 95% confidence interval for the difference. Oddly, R doesn't show us the difference. The `parameters()` function from the {parameters} package offers a more informative output (Table 2).
+We have proportions that are the same as in Table 1 (75.5% / 72.6%) and the 95% confidence interval for the difference. R doesn't show us the difference in proportions but the `parameters()` function from the {parameters} package will (Table 2).
 
 ```{r}
 #| eval: false
@@ -160,7 +199,7 @@ prop.test(q1_matrix) |>
   model_parameters()
 ```
 
-#### Table 2: 
+#### Table 2:
 
 ```{r}
 #| echo: false
@@ -191,9 +230,9 @@ We have a $\chi^2$ statistic of 11.8 which is statistically significant. In a hy
 
 Let's leave the frequentist paradigm behind.
 
-### Bayesian way with {brms}
+## Bayesian way with {brms}
 
-...
+We have a situation where a sample of the UK population were asked if they have visited woodland in the last few years. For each respondent, their answer to this question could only take one of two possible options: they could either answer yes or no.
 
 The official statistical term for this kind of data-generating processes (a bunch of independent trials with some probability of success) is a binomial distribution. It is defined by three parameters:
 
@@ -203,9 +242,9 @@ $$
 
 Where:
 
-1. Number of successes ($y$): the number of respondents who visited woodland in the last few years, or `n` in our Q1 data set.
-2. Probability of success ($\pi$): the probability that someone visited woodland in the last few years, or the thing we want to model for each gender.
-3. Number of trials ($n$): the total number of people surveyed, or `total` in our Q1 data set.
+1.  Number of successes ($y$): the number of respondents who visited woodland in the last few years, or `n` in our Q1 data set.
+2.  Probability of success ($\pi$): the probability that someone visited woodland in the last few years (this is the thing we want to model for each gender).
+3.  Number of trials ($n$): the total number of respondents, or `total` in our Q1 data set.
 
 We are interested in the probability of a "success" (i.e., $\pi$), which is the number of successes divided by the total number of trials:
 
@@ -213,7 +252,7 @@ $$
 \frac{\text{Number of successes}}{\text{Number of trials}}
 $$
 
-Or:
+Or,
 
 $$
 \frac{\text{Number of successes}}{\text{Number of successes} + \text{Number of failures}}
@@ -224,6 +263,7 @@ Expressed in terms of our data on woodland visitors in the UK Public Opinion of 
 $$
 \frac{\text{Number of woodland visitors}}{\text{Number of respondents}}
 $$
+
 Similarly, we can split the denominator into woodland visitors and non-visitors:
 
 $$
@@ -232,17 +272,18 @@ $$
 
 Where a non-visitor will, in our case, include those that did not go outside and those that visited other green and natural spaces (e.g., mountains or the sea).
 
-The $\alpha$ and $\beta$ parameters correspond to the number of successes and failures, respectively:
+The $\alpha$ and $\beta$ parameters correspond to the number of successes (answered "yes") and failures (answered "no"), respectively:
 
 $$
 \frac{\alpha}{\alpha + \beta}
 $$
 
-With these shape parameters we can create any percentage or fraction we want. In addition, we can control for the uncertainty if the distribution by changing with the size of the parameters. For instance, if we think that there is a 60% chance of some event this could be represented with $\alpha = 6$ and $\beta = 4$, since $\frac{6}{6+4} = 0.4$. We could also write it as $\alpha = 60$ and $\beta = 40$, since $\frac{60}{60+40} = 0.4$ too. Both are centred at 40% but Beta(60, 40) is a lot narrower and more certain than Beta(6, 4) (Figure x).
+With these shape parameters we can create any percentage or fraction we want. In addition, we can control for the uncertainty of the distribution by changing the size of the parameters. For instance, if we think that there is a 60% chance of some event occuring this could be represented by $\alpha = 6$ and $\beta = 4$, since $\frac{6}{6+4} = 0.4$. We could also write it as $\alpha = 60$ and $\beta = 40$, since $\frac{60}{60+40} = 0.4$ too. Both are centred at 40% but Beta(60, 40) is a lot narrower and more certain than Beta(6, 4) (Figure x).
 
 #### Figure x:
 
 ```{r}
+#| label: pi-dist-test
 #| include: true
 ggplot() +
   stat_function(fun = ~dbeta(., 6, 4), geom = "area",
@@ -250,22 +291,30 @@ ggplot() +
   stat_function(fun = ~dbeta(., 60, 40), geom = "area",
                 aes(fill = "Beta(60, 40)"), alpha = 0.5) +
   scale_x_continuous(labels = label_percent()) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0))) +
   scale_fill_manual(values = c("Beta(6, 4)" = "#FFDC00",
                                "Beta(60, 40)" = "#F012BE")) +
-  labs(x = "π", y = NULL, fill = NULL) +
-  theme(axis.text.y = element_blank(),
-        legend.position = "top")
+  labs(x = "π",
+       y = NULL,
+       fill = NULL) +
+  theme_gss(axis.text.y = element_blank(),
+            legend.position = "bottom")
 ```
 
 We have already seen the data and know that the proportion of woodland visitors is around 73% of male respondents and 76% for female respondents. But let's pretend that we haven't seen the data and all our prior knowledge is based on the 2021 Public Opinion of Forestry survey. In the previous survey, 69% of respondents reported visiting woodland in the last few years. To make the maths easier, let's say 70% instead. This implies something like a Beta(7, 3) distribution (since $\frac{7}{7+3} = 0.7$), with lots of high possible values greater than 50% but not a lot lower than 40%. We could narrow this down by scaling up the parameters (e.g., Beta(70, 30)), but leaving the prior distribution wide like this allows for more possible responses.
 
 ```{r}
+#| label: pi-dist
 #| include: true
 ggplot() +
   stat_function(fun = ~dbeta(., 7, 3), geom = "area", fill = "#AC3414") +
   scale_x_continuous(labels = label_percent()) +
-  labs(x = "Possible values for π", y = NULL, fill = NULL) +
-  theme(axis.text.y = element_blank())
+  scale_y_continuous(expand = expansion(mult = c(0, 0))) +
+  labs(x = "Possible values for π",
+       y = NULL,
+       fill = NULL) +
+  theme_gss(axis.text.y = element_blank(),
+            tick_mark = "x")
 ```
 
 Okay, so with our Beta(7, 3) prior, we now have all the information we need to specify the official formal model of the data generating process for our estimand without null hypotheses in sight:
@@ -273,9 +322,9 @@ Okay, so with our Beta(7, 3) prior, we now have all the information we need to s
 $$
 \begin{aligned}
 &\ \textbf{Estimand} \\
-\theta =&\ \pi_{\text{woodland visitor}_\text{female}} - \pi_{\text{woodland visotor}_\text{male}} \\[10pt]
+\theta =&\ \pi_{\text{woodland visitor}_\text{female}} - \pi_{\text{woodland visitor}_\text{male}} \\[10pt]
 &\ \textbf{Beta-binomial model for female} \\
-y_{n \text{ woodland visitor}_\text{female}} \sim&\ \operatorname{Binomial}(n_{\text{total}_\text{female}}, \pi_{\text{woodland visotor}_\text{female}}) \\
+y_{n \text{ woodland visitor}_\text{female}} \sim&\ \operatorname{Binomial}(n_{\text{total}_\text{female}}, \pi_{\text{woodland visitor}_\text{female}}) \\
 \pi_{\text{woodland visitor}_\text{female}} \sim&\ \operatorname{Beta}(\alpha_\text{female}, \beta_\text{female}) \\[10pt]
 &\ \textbf{Beta-binomial model for male} \\
 y_{n \text{ woodland visitor}_\text{male}} \sim&\ \operatorname{Binomial}(n_{\text{total}_\text{male}}, \pi_{\text{woodland visitor}_\text{male}}) \\
@@ -284,28 +333,13 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&\ \operatorname{Binomial}(n_{\te
 \alpha_\text{female}, \alpha_\text{male} =&\ 7 \\
 \beta_\text{female}, \beta_\text{male} =&\ 3
 \end{aligned}
-$$
-...
+$$ ...
 
-## Question 2: support for new woodland creation (afforestation) in the UK
+# Question 2: support for new woodland creation (afforestation) in the UK
 
-Thinking about managing UK forests and woodlands in response to climate change...To what extent do you agree or disagree with each of the following statements?
+Estimand
 
-SFW_Q14_2
-
-*A lot more trees should be planted.*
-
-With this question we are going to look at the population as a whole and not at male v. female. For reason we will need to aggreate the data. In addition, I have collapsed or renamed the possible responses into:
-
-* Agree = "strongly agree" + "tend to agree"
-* Neither = "Neither agree nor disagree"
-* Disagree = "strongly disagree" + "tend to disagree"
-
-And "don't know" responses have been removed (after the calculation of the proportions).
-
-## Estimand
-
-For this question
+For this question...
 
 ```{r}
 wc_by_gender <- tribble(
@@ -333,15 +367,22 @@ wc_df <- wc_by_gender |>
     support == "Neither agree nor disagree" ~ "Neither",
     TRUE ~ support
   )) |> 
-  group_by(support) |> 
+  group_by(support, gender) |> 
   summarise(n = sum(n)) |> 
+  ungroup() %>% 
+  group_by(support) |> 
+  group_modify(~ bind_rows(., summarize(., across(where(is.numeric), sum)))) |> 
   ungroup() |> 
+  replace_na(list(gender = "total")) |> 
+  group_by(gender) |> 
   mutate(total = sum(n),
          prop = n / total) |> 
   filter(support != "Don't know") |> 
   mutate(support = fct_relevel(support, c("Agree", "Neither", "Disagree"))) |> 
   arrange(support)
 ```
+
+#### Table x: Contingency table showing the proportion of men and women that support afforestation, UK, 2023
 
 ```{r}
 #| echo: false
@@ -350,12 +391,15 @@ wc_df |>
                      prop = label_percent()(prop),
                      n = label_comma()(n))) |> 
   select(-n, -total, -prop) |> 
-  mutate(support = as.character(support)) |> 
+  mutate(gender = str_to_title(gender),
+         support = as.character(support)) |> 
+  pivot_wider(names_from = gender,
+              values_from = label) |> 
   gt() |> 
   cols_label(
     support = "Support",
-    label = "Proportion"
-  ) |> 
+    Total = "All respondents"
+  ) |>
   cols_align(align = c("left"),
              columns = support) |> 
   fmt_markdown(
@@ -363,19 +407,37 @@ wc_df |>
   ) |> 
   opt_horizontal_padding(3) |> 
   tab_options(column_labels.font.weight = "bold",
-              row_group.font.weight = "bold")
+              row_group.font.weight = "bold") |> 
+  tab_style(
+    style = list(
+      cell_fill(color = colorspace::lighten("#28A197", 0.7)),
+      cell_text(color = "#28A197", weight = "bold")
+    ),
+    locations = list(
+      cells_body(columns = 2:3, rows = 1)
+    )
+  ) %>% 
+  tab_style(
+    style = list(
+      cell_fill(color = colorspace::lighten("#801650", 0.8)),
+      cell_text(color = "#801650", weight = "bold")
+    ),
+    locations = list(
+      cells_body(columns = "Total", rows = 1:3)
+    )
+  )
 ```
 
 Again, we'll call the estimand $\theta$ but this time we have three different versions of it:
 
 $$
-\text{(1) } \theta_{AN} = \pi_{\text{agree}} - \pi_{\text{neither}}
+\theta_{AN} = \pi_{\text{agree}} - \pi_{\text{neither}}
 $$
 
 $$
-\text{(2) } \theta_{AD} = \pi_{\text{agree}} - \pi_{\text{disagree}}
+\theta_{AD} = \pi_{\text{agree}} - \pi_{\text{disagree}}
 $$
 
 $$
-\text{(3) } \theta_{ND} = \pi_{\text{neither}} - \pi_{\text{disagree}}
+\theta_{ND} = \pi_{\text{neither}} - \pi_{\text{disagree}}
 $$
