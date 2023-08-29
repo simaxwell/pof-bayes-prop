@@ -21,7 +21,7 @@ editor_options:
 
 # Introduction
 
-This report is a development opportunity for me and a guide for others at Forest Research to better understand Bayesian inference. In it I explore Bayesian proportion tests in R using the {brms} package and data from the Public Opinion of Forestry 2023: UK survey, conducted by Forest Research. The survey asked 11,055 adults (aged 16+) in the UK a range of questions on forestry and forestry-related issues. Here we will explore two questions from the survey: the proportion of male and female respondents who visited woodland in the last few years, and the proportion of respondents that support new woodland creation (afforestation) in response to the threat of climate change.
+This report is a development opportunity for me and a guide for others to better understand Bayesian inference. In it I explore Bayesian proportion tests in R using the {brms} package and data from the Public Opinion of Forestry 2023: UK survey, conducted by Forest Research. The survey asked 11,055 adults (aged 16+) in the UK a range of questions on forestry and forestry-related issues. Here we will explore the results from two questions in the survey: the proportion of respondents who visited woodland in the last few years, and the proportion of respondents that support new woodland creation (afforestation) in response to the threat of climate change.
 
 The report is heavily (!) based on the fantastic blog post [A guide to Bayesian proportion tests with R and {brms}](https://www.andrewheiss.com/blog/2023/05/15/fancy-bayes-diffs-props/) by Andrew Heiss, assistant professor at Georgia State University (published 15 May 2023). Andrew's blog was, in turn, based on a [blog post](https://www.sumsar.net/blog/2014/06/bayesian-first-aid-prop-test/) and R package by data scientist Rasmus Bååth (published 27 June 2014). Andrew's blog is the first thing I've read where I feel like I actually understood the basics of Bayesian inference and how I might perform an analysis in a Bayesian framework.
 
@@ -44,7 +44,7 @@ library(ggpattern)
 library(parameters)
 ```
 
-Second, create a handy function for formatting percent point differences:
+Second, create a handy function for formatting percent point differences in plots:
 
 ```{r}
 #| label: src
@@ -91,29 +91,26 @@ q2_raw <- tribble(
   mutate(across(where(is.numeric), ~round(.x, 0)))
 ```
 
-Note that here I use the weighted totals and that the `mutate` call rounds all numeric columns to whole numbers (integers).
+Note that I use the weighted totals and that the `mutate` call rounds all numeric columns to whole numbers (integers).
 
 # The questions
 
-The aim of this article is to illustrate the logic of Bayesian proportion tests using data from the UK Public Opinion of Forestry Survey 2023. To do this we will explore three questions:
+The aim of this article is to illustrate the logic of Bayesian proportion tests using data from the Public Opinion of Forestry 2023: UK survey. To do this we will explore three questions:
 
 1. Is the proportion of women that visited woodland in the last few years higher than the proportion of men?
 2.  Is there a difference between the proportion of men and women that support afforestation as a climate change mitigation strategy?
-3. Does support for afforestation as a climate change mitigation strategy vary among the UK population?
+3. Does support for afforestation vary among the UK population?
 
-The first question we are going to explore is labelled KFW_Q1a in the YouGov spreadsheet. The original question asked to respondents reads:
+The first question we are going to explore is labelled KFW_Q1a in the YouGov spreadsheet. The question asked to all respondents was:
 
 > In the last few years have you ever visited forests or woodlands for walks, picnics or other recreation?
 
-Respondents could select one of three options:
+Respondents could select one of two options:
 
-1. Yes, I have,
-2. No, I haven't, and
-3. Don't know.
+1. Yes, I have, and
+2. No, I haven't.
 
-We're interested in the proportion that answered "yes, I have".
-
-[What have I done with the DKs?]
+For analysis 1 we will look at the proportion that answered "yes, I have".
 
 The second question we are going to explore is labelled SFW_Q14_2 in the YouGov spreadsheet. All respondents were asked the following question:
 
@@ -128,7 +125,7 @@ Respondents were given six possible options:
 * Strongly disagree, and
 * Don't know.
 
-With this question we are going to look at both the difference between men and women *and* the population as a whole.
+With this question we are going to look at both the difference between men and women and among the population as a whole.
 
 In order to reduce the number of possible answers and make the analysis simpler, the data have been transformed. First, I have collapsed 4 answers into 2 (in order to explore net support, i.e., all those that agree/disagree irrespective of the strength of feeling) and renamed one. Second, "don't know" responses have been removed (after the calculation of the proportions).
 
@@ -138,13 +135,11 @@ The new options are:
 -   Neither = "Neither agree nor disagree"
 -   Disagree = "strongly disagree" + "tend to disagree"
 
-For question 2, we will look at the difference between men and women; for question 3, we will look at the difference between "agree", "neither" and "disagree" for all respondents.
+For analysis 2, we will look at the difference between men and women; for analysis 3, we will look at the difference between "agree", "neither" and "disagree" for all respondents.
 
-Let's start with question 1.
+# Analysis 1: woodland engagement among men and women
 
-# Question 1: woodland engagement among male and female respondents
-
-For our first question, we want to know if there is a substantial difference in the proportion of woodland visitors that are male and the proportion of woodland visitors that are female, or whether the difference between them is zero (shown in blue in Table 1).
+For our first question, we want to know if there is a substantial difference in the proportion of woodland visitors that are male and the proportion of woodland visitors that are female, or whether the difference between the proportions is zero (highlighted blue in Table 1).
 
 ```{r}
 #| include: false
@@ -185,7 +180,7 @@ table1 |>
   )
 ```
 
-In formal mathematical notation, we will call this the estimand $\theta$, which is the difference between the two proportions $\pi$:
+In formal mathematical notation, we will call this the estimand $\theta$, which is the difference between the two proportions:
 
 $$
 \theta = \pi_{\text{woodland visitor}_{\text{female}}} - \pi_{\text{woodland visitor}_{\text{male}}}
@@ -259,9 +254,9 @@ Let's leave the frequentist paradigm behind.
 
 ## Bayesian way with {brms}
 
-We have a situation where a sample of the UK population were asked if they have visited woodland in the last few years. For each respondent, their answer to this question could take only one of two values: they could either answer yes or no. This question is then asked repeatedly (and independently) to all 11,055 respondents, with each answering either yes or no.
+We have a situation where a subset of the UK population were asked if they have visited woodland in the last few years. Each respondent could either answer yes *or* no. This question was then asked independently to all 11,055 respondents, with each answering either yes or no.
 
-The official statistical term for this kind of data-generating processes (a bunch of independent trials with some probability of success) is a binomial distribution. The most popular example is flipping a coin (where each flip results in either heads or tails). It is defined by three parameters:
+The official statistical term for this kind of data-generating processes (a bunch of independent trials with some probability of success) is a binomial distribution. The most popular example is flipping a coin (where each flip results in either heads *or* tails). It is defined by three parameters:
 
 $$
 y \sim \operatorname{Binomial}(n, \pi)
@@ -269,9 +264,9 @@ $$
 
 Where:
 
-1.  Number of successes ($y$): the number of respondents who visited woodland in the last few years, or `n` in our Q1 data set.
-2.  Probability of success ($\pi$): the probability that someone visited woodland in the last few years (this is the thing we want to model for each gender).
-3.  Number of trials ($n$): the total number of respondents, or `total` in our Q1 data set.
+1. $y$ = number of successes: in our case, the number of respondents who visited woodland in the last few years, or `n`.
+2.  $\pi$ = probability of success: the probability that someone visited woodland in the last few years (this is the thing we want to model for each gender).
+3. $n$ = number of trials: in our case, the total number of respondents, or `total`.
 
 We are interested in the probability of a "success" (i.e., $\pi$), which is the number of successes divided by the total number of trials:
 
@@ -279,31 +274,31 @@ $$
 \pi = \frac{\text{Number of successes}}{\text{Number of trials}}
 $$
 
-Or,
+Which can also be expressed:
 
 $$
-\pi = \frac{\text{Number of successes}}{\text{Number of successes} + \text{Number of failures}}
+\pi = \frac{\text{Number of successes}}{\text{(Number of successes} + \text{Number of failures)}}
 $$
 
-Expressed in terms of our data on woodland visitors in the Public Opinion of Forestry 2023: UK survey:
+Expressed in terms of our data on woodland visitors, the equation becomes:
 
 $$
 \pi = \frac{\text{Number of woodland visitors}}{\text{Number of respondents}}
 $$
 
-Similarly, we can split the denominator into woodland visitors and non-visitors:
+Similarly, we can split the denominator into woodland visitors and non-visitors as follows:
 
 $$
-\pi = \frac{\text{Number of woodland visitors}}{(\text{Number of woodland visitors}) + (\text{Number of non-visitors)}}
+\pi = \frac{\text{Number of woodland visitors}}{(\text{Number of woodland visitors} + \text{Number of non-visitors)}}
 $$
 
-It is $\pi$ that we are going to estimate. We are going to model $\pi$ using the beta distribution, which (according to Wikipedia) is "a family of conjugate prior probability distributions for binomial (including Bernoulli) and geometric distributions." The reason we are going to use the beta distribution is because it is bound by the interval [0, 1]. It is defined by two postive parameters: $\alpha$ and $\beta$, where the $\alpha$ and $\beta$ parameters correspond to the number of successes (answered "yes") and failures (answered "no"), respectively:
+It is $\pi$ that we are going to estimate. We are going to model $\pi$ using the beta-binomial distribution. The beta-binomial distribution is the binomial distribution in which the probability of success at each of $n$ trials is not fixed but randomly drawn from a beta distribution. It is bound by the the interval [0, 1], which is ideal because $\pi$ is a proportion somewhere between 0 and 1 (i.e., 0% and 100%). The beta distribution is defined by two positive shape parameters: $\alpha$ and $\beta$, where $\alpha$ and $\beta$ correspond to the number of successes (answered "yes") and failures (answered "no"), respectively:
 
 $$
 \pi = \frac{\alpha}{\alpha + \beta}
 $$
 
-With these shape parameters we can create any percentage/proportion we want. In addition, we can control for the uncertainty of the distribution by changing the size of the parameters. For instance, if we think that there is a 60% chance of some event occuring, this could be represented by $\alpha = 3$ and $\beta = 2$, since $\frac{3}{3+2} = 0.6$. We could also write it as $\alpha = 30$ and $\beta = 20$, since $\frac{30}{30+20} = 0.6$ too. Both are centred at 60% but Beta(30, 20) is a lot narrower and more certain than Beta(3, 2) (Figure x).
+With these shape parameters we can create any percentage/proportion we want. In addition, we can control for the uncertainty of the distribution by changing the size of the parameters. For instance, if we think that there is a 60% chance of some event occuring, this could be represented by $\alpha = 3$ and $\beta = 2$, since $\frac{3}{3+2} = 0.6$. We could also write it as $\alpha = 30$ and $\beta = 20$, since $\frac{30}{30+20} = 0.6$ too. Both are centred at 60% but Beta(30, 20) is a lot narrower than Beta(3, 2) (Figure 2).
 
 #### Figure 2: Beta(3, 2) and Beta(30, 20) distributions
 
@@ -325,7 +320,7 @@ ggplot() +
             legend.position = "bottom")
 ```
 
-We have already seen the data and know that the proportion of woodland visitors is around 73% for male respondents and 76% for female respondents. But let's pretend that we haven't seen the data and all our prior knowledge is based on the 2021 Public Opinion of Forestry survey. In the previous survey, 69% of respondents reported visiting woodland in the last few years. To make the maths easier, let's say 70% instead. This implies something like a Beta(7, 3) distribution (since $\frac{7}{7+3} = 0.7$), with lots of high possible values greater than 50% but not a lot lower than 40%. We could narrow this down by scaling up the parameters (e.g., Beta(70, 30)), but leaving the prior distribution wide like this allows for more possible responses.
+We have already seen the data and know that the proportion of woodland visitors is around 73% for men and 76% for women. But let's pretend that we haven't seen the data and all our prior knowledge is based on the 2021 Public Opinion of Forestry survey. In the previous survey, 69% of respondents reported visiting woodland in the last few years. To make the maths easier, let's say 70% instead. This implies something like a Beta(7, 3) distribution (since $\frac{7}{7+3} = 0.7$). We could narrow this down by using the Beta(70, 30) distribution, but leaving the prior wide like this allows for more possible responses (Figure 3).
 
 #### Figure 3: Beta(7, 3) distribution
 
@@ -345,36 +340,37 @@ ggplot() +
             tick_mark = "x")
 ```
 
-...
-
-Precision or overdispersion...
+Instead of using the shape parameters $\alpha$ and $\beta$, {brms} uses mean ($\mu$) and precision or overdispersion ($\phi$) parameterisation for the beta-binomial family. Fortunately, we and express one in the terms of the others:
 
 $$
 \begin{aligned}
 \text{Shape 1:} && \alpha &= \mu \times \phi \\
-\\
 \text{Shape 2:} && \beta &= (1 - \mu) \times \phi
 \end{aligned}
 $$
+This means that:
+
 $$
 \begin{aligned}
 \text{Mean:} && \mu &= \frac{\alpha}{\alpha + \beta} \\
-\\
 \text{Precision:} && \phi &= \alpha + \beta
 \end{aligned}
 $$
+
+Plugging in our numbers we get the following values for the priors:
 
 $$
 \begin{aligned}
 \text{Mean:} && \mu &= \frac{7}{(7 + 3)} \\
 && &= \frac{7}{10} \\
 && &= 0.7 \\
-\\
 \text{Precision:} && \phi &= \alpha + \beta \\
 && &= 7 + 3 \\
 && &= 10
 \end{aligned}
 $$
+
+
 
 #### Figure 4: Exponential(1/1000) distribution
 
@@ -396,7 +392,7 @@ ggplot() +
 
 Note that when $\phi = 0$ (i.e., no overdispersion), the beta-binomial model reduces to having the same variance as the binomial distribution.
 
-Okay, so with our Beta(70, 30) prior, we now have all the information we need to specify the official formal model of the data generating process for our estimand without null hypotheses in sight:
+Okay, so with our Beta(7, 3) prior, we now have all the information we need to specify the official formal model of the data generating process for our estimand without a null hypothesis in sight:
 
 $$
 \begin{aligned}
@@ -410,17 +406,16 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&\ \operatorname{Binomial}(n_{\te
 \pi_{\text{woodland visitor}_\text{male}} \sim&\ \operatorname{Beta}(\alpha_\text{male}, \beta_\text{male}) \\[10pt]
 &\ \textbf{Priors} \\
 \alpha_\text{female}, \alpha_\text{male} =&\ 7 \\
-\beta_\text{female}, \beta_\text{male} =&\ 3 \\
-\phi =&\ \text{Exponential(0.001)}
+\beta_\text{female}, \beta_\text{male} =&\ 3
 \end{aligned}
 $$
-...
+Let's jump into {brms}.
 
 ## Using {brms}
 
 ### Setting priors
 
-The {brms} package had a handy function to identify the parameters we can set (i.e., our priors): `get_prior`. By passing our equation, data set and family to the `get_priors` function we can see {brms}'s default priors:
+The {brms} package had a handy function to identify the parameters we can set (i.e., our priors). By passing our equation, data set and family to the `get_prior` function we can see which parameters can be modeled and {brms}'s default values:
 
 ```{r}
 get_prior(formula = bf(n | trials(total) ~ 0 + gender),
@@ -429,13 +424,13 @@ get_prior(formula = bf(n | trials(total) ~ 0 + gender),
                                  link_phi = "identity"))
 ```
 
-In terms of the explanatory variable gender, we can see three useful bits of information:
+We get three useful bits of information from the output of the `get_prior` function:
 
-1. The default is a "flat" prior (i.e., values are equally likely).
-2. `class = b` refers to this being a population-level effect.
-3. `coef` shows `genderFemale` and `genderMale`.
+1. The default priors for gender are "flat" (i.e., all values are equally likely). 
+2. With `coef = genderFemale` and `coef = genderMale` we can set separate priors for the male/female woodland visitor proportions. I think that would be overkill here. Handily, setting a prior with `class = b` (which refers gender being a population-level effect) will ensure `genderFemale` and `genderMale` have the same prior.
+3. The default prior for $\phi$ (the precision parameter) is $\text{Gamma}(0.01, 0.01)$.
 
-We could if we wished set a separate prior for genderFemale and genderMale. 
+Let's set our priors. Note `lb` and `ub` specify the lower and upper bounds, respectively:
 
 ```{r}
 prior_q1 <- c(
@@ -444,9 +439,12 @@ prior_q1 <- c(
 )
 ```
 
+Now we have set our priors, let's run our first Bayesian model:
+
 ### Running the model
 
 ```{r}
+#| include: false
 visitor_beta_binomial_model <- brm(
   bf(n | trials(total) ~ 0 + gender),
   data = q1_raw,
@@ -462,7 +460,7 @@ visitor_beta_binomial_model <- brm(
 )
 ```
 
-#### Figure x: 
+#### Figure x: Posterior distribution of the proportion of men and women that visited woodland in the last few years
 
 ```{r}
 visitor_beta_binomial_model |> 
@@ -574,7 +572,7 @@ The posterior probability is 84%.
 
 The evidence in favour of $\pi_{\text{woodland visitor}_{\text{female}}} > \pi_{\text{woodland visitor}_{\text{male}}}$ is 5.27 times larger than the evidence in favour of $\pi_{\text{woodland visitor}_{\text{female}}} < \pi_{\text{woodland visitor}_{\text{male}}}$.
 
-# Question 2: support for new woodland creation (afforestation) in the UK
+# Analysis 2: support for new woodland creation among men and women
 
 For this question, we will look at the difference in the proportions of men that support (net agree = "strongly agree" + "tend to agree") afforestation vs. women. The proportions are highlighted turqoise in Table x.
 
@@ -653,7 +651,7 @@ wc_df |>
   )
 ```
 
-# Question 3
+# Analysis 3: support for new woodland creation in the UK population
 
 Lastly, for this question we will look at... (pink highlighted cells in Table x).
 
