@@ -444,7 +444,6 @@ Now we have set our priors, let's run our first Bayesian model:
 ### Running the model
 
 ```{r}
-#| include: false
 visitor_beta_binomial_model <- brm(
   bf(n | trials(total) ~ 0 + gender),
   data = q1_raw,
