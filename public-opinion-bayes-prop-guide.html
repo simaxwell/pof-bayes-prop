@@ -7,6 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Si Maxwell">
+<meta name="dcterms.date" content="2023-08-25">
+<meta name="description" content="Guide">
 
 <title>A guide to Bayesian proportion tests with R and {brms}</title>
 <style>
@@ -97,44 +99,85 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <script src="public-opinion-bayes-prop-guide_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="public-opinion-bayes-prop-guide_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="public-opinion-bayes-prop-guide_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<style>
+    .quarto-title-block .quarto-title-banner {
+      color: black;
+background: white;
+    }
+    </style>
 
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
 </head>
 
-<body class="fullcontent">
+<body>
 
-<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-
-<main class="content" id="quarto-document-content">
-
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">A guide to Bayesian proportion tests with R and {brms}</h1>
-<p class="subtitle lead">Using data from the UK Public Opinion of Forestry 2023 survey</p>
-</div>
-
-
-
-<div class="quarto-title-meta">
-
-    <div>
-    <div class="quarto-title-meta-heading">Author</div>
-    <div class="quarto-title-meta-contents">
-             <p>Si Maxwell </p>
-          </div>
+<header id="title-block-header" class="quarto-title-block default toc-left page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">A guide to Bayesian proportion tests with R and {brms}</h1>
+            <p class="subtitle lead">Using data from the UK Public Opinion of Forestry 2023 survey</p>
+                  <div>
+        <div class="description">
+          Guide
+        </div>
+      </div>
+                </div>
   </div>
     
-    
-  </div>
   
+  <div class="quarto-title-meta">
 
-</header>
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Si Maxwell </p>
+            </div>
+    </div>
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">25 August 2023</p>
+      </div>
+    </div>
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="page-columns page-rows-contents page-layout-article toc-left">
+<div id="quarto-sidebar-toc-left" class="sidebar toc-left">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#data-wrangling-and-exploration" id="toc-data-wrangling-and-exploration" class="nav-link" data-scroll-target="#data-wrangling-and-exploration">Data wrangling and exploration</a></li>
+  <li><a href="#the-questions" id="toc-the-questions" class="nav-link" data-scroll-target="#the-questions">The questions</a>
+  <ul class="collapse">
+  <li><a href="#question-1-woodland-engagement-among-male-vs.-female-respondents" id="toc-question-1-woodland-engagement-among-male-vs.-female-respondents" class="nav-link" data-scroll-target="#question-1-woodland-engagement-among-male-vs.-female-respondents">Question 1: woodland engagement among male vs.&nbsp;female respondents</a>
+  <ul class="collapse">
+  <li><a href="#classical-frequentist-way" id="toc-classical-frequentist-way" class="nav-link" data-scroll-target="#classical-frequentist-way">Classical frequentist way</a></li>
+  <li><a href="#bayesian-way-with-brms" id="toc-bayesian-way-with-brms" class="nav-link" data-scroll-target="#bayesian-way-with-brms">Bayesian way with {brms}</a></li>
+  </ul></li>
+  <li><a href="#question-2-support-for-new-woodland-creation-afforestation-in-the-uk" id="toc-question-2-support-for-new-woodland-creation-afforestation-in-the-uk" class="nav-link" data-scroll-target="#question-2-support-for-new-woodland-creation-afforestation-in-the-uk">Question 2: support for new woodland creation (afforestation) in the UK</a></li>
+  <li><a href="#estimand" id="toc-estimand" class="nav-link" data-scroll-target="#estimand">Estimand</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+</div>
+<main class="content quarto-banner-title-block" id="quarto-document-content">
 
+
+
+
+<hr>
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>This report is a tool to help me and others at Forest Research (FR) better understand Bayesian inference. It is a guide to Bayesian proportion tests in R using the {brms} pacakge and FR’s Public Opinion of Forestry 2023: UK survey. The survey asked 11,055 adults in the UK a range of questions on forestry and forestry-related topics. Here we will explore the proportions of respondents who reported visiting woodland in the last few years and those that support increased woodland creation (afforestation) in response to climate change.</p>
-<p>The report is heavily (!) based on the fantastic blog post <a href="https://www.andrewheiss.com/blog/2023/05/15/fancy-bayes-diffs-props/">A guide to Bayesian proportion tests with R and {brms}</a> by Andrew Heiss, assistant professor at Georgia State University (published 15 May 2023).</p>
+<p>This report is a tool to help me and others at Forest Research better understand Bayesian inference. It is a guide to Bayesian proportion tests in R using the {brms} package and Forest Research’s Public Opinion of Forestry 2023: UK survey. The survey asked 11,055 adults (aged 16+) in the UK a range of questions on forestry and forestry-related topics. Here we will explore the proportions of respondents who reported visiting woodland in the last few years and those that support increased woodland creation (afforestation) in response to climate change.</p>
+<p>The report is heavily (!) based on the fantastic blog post <a href="https://www.andrewheiss.com/blog/2023/05/15/fancy-bayes-diffs-props/">A guide to Bayesian proportion tests with R and {brms}</a> by Andrew Heiss, assistant professor at Georgia State University (published 15 May 2023). This is the first thing I have read where I have come away feeling like I have understand a little about Bayesian inference.</p>
 <p>The first thing we need to do is load all the necessary packages for the analysis.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
@@ -149,11 +192,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 </section>
 <section id="data-wrangling-and-exploration" class="level1">
 <h1>Data wrangling and exploration</h1>
-<p>Next we need to load in the data. As the data set is nice and small, it’s easy enough to write it out manually. For reference, the data come from the the <a href="https://www.forestresearch.gov.uk/tools-and-resources/statistics/statistics-by-topic/public-opinion-of-forestry/">raw spreadsheet supplied by YouGov</a>, the market research company that conducted the survey on behalf of Forest Research.</p>
-<p>The first question we are going to explore is labelled KFW_Q1a in YouGov spreadsheet:</p>
+<p>The first question we are going to explore is labelled KFW_Q1a in YouGov spreadsheet and reads:</p>
 <blockquote class="blockquote">
 <p>In the last few years have you ever visited forests or woodlands for walks, picnics or other recreation?</p>
 </blockquote>
+<p>To explore the results we need to load in the data. As the data set is nice and small, it’s easy enough to write it out manually. For reference, the data come from the the <a href="https://www.forestresearch.gov.uk/tools-and-resources/statistics/statistics-by-topic/public-opinion-of-forestry/">raw spreadsheet supplied by YouGov</a>, the market research company that conducted the survey on behalf of Forest Research.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>q1_raw <span class="ot">&lt;-</span> <span class="fu">tribble</span>(</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span>gender, <span class="sc">~</span>n, <span class="sc">~</span>total,</span>
@@ -161,28 +204,29 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"Male"</span>, <span class="fl">3890.773</span>, <span class="fl">5361.675</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+<p>We are going to explore the difference in the proportions shown in blue in Table 1.</p>
 <section id="table-1-contingency-table-showing-the-proportion-of-men-and-women-that-visited-woodland-in-the-last-few-years-uk-2023" class="level4">
 <h4 class="anchored" data-anchor-id="table-1-contingency-table-showing-the-proportion-of-men-and-women-that-visited-woodland-in-the-last-few-years-uk-2023">Table 1: Contingency table showing the proportion of men and women that visited woodland in the last few years, UK, 2023</h4>
 <div class="cell">
 <div class="cell-output-display">
 
-<div id="mreuedfrij" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#mreuedfrij table {
+<div id="ocvedmbrvp" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#ocvedmbrvp table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#mreuedfrij thead, #mreuedfrij tbody, #mreuedfrij tfoot, #mreuedfrij tr, #mreuedfrij td, #mreuedfrij th {
+#ocvedmbrvp thead, #ocvedmbrvp tbody, #ocvedmbrvp tfoot, #ocvedmbrvp tr, #ocvedmbrvp td, #ocvedmbrvp th {
   border-style: none;
 }
 
-#mreuedfrij p {
+#ocvedmbrvp p {
   margin: 0;
   padding: 0;
 }
 
-#mreuedfrij .gt_table {
+#ocvedmbrvp .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -208,12 +252,12 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-left-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_caption {
+#ocvedmbrvp .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#mreuedfrij .gt_title {
+#ocvedmbrvp .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -225,7 +269,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-bottom-width: 0;
 }
 
-#mreuedfrij .gt_subtitle {
+#ocvedmbrvp .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -237,7 +281,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-top-width: 0;
 }
 
-#mreuedfrij .gt_heading {
+#ocvedmbrvp .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -249,13 +293,13 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-right-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_bottom_border {
+#ocvedmbrvp .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_col_headings {
+#ocvedmbrvp .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -270,7 +314,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-right-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_col_heading {
+#ocvedmbrvp .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -290,7 +334,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   overflow-x: hidden;
 }
 
-#mreuedfrij .gt_column_spanner_outer {
+#ocvedmbrvp .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -302,15 +346,15 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   padding-right: 4px;
 }
 
-#mreuedfrij .gt_column_spanner_outer:first-child {
+#ocvedmbrvp .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#mreuedfrij .gt_column_spanner_outer:last-child {
+#ocvedmbrvp .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#mreuedfrij .gt_column_spanner {
+#ocvedmbrvp .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -322,11 +366,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   width: 100%;
 }
 
-#mreuedfrij .gt_spanner_row {
+#ocvedmbrvp .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#mreuedfrij .gt_group_heading {
+#ocvedmbrvp .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -352,7 +396,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   text-align: left;
 }
 
-#mreuedfrij .gt_empty_group_heading {
+#ocvedmbrvp .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -367,15 +411,15 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   vertical-align: middle;
 }
 
-#mreuedfrij .gt_from_md > :first-child {
+#ocvedmbrvp .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#mreuedfrij .gt_from_md > :last-child {
+#ocvedmbrvp .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#mreuedfrij .gt_row {
+#ocvedmbrvp .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -394,7 +438,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   overflow-x: hidden;
 }
 
-#mreuedfrij .gt_stub {
+#ocvedmbrvp .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -407,7 +451,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   padding-right: 15px;
 }
 
-#mreuedfrij .gt_stub_row_group {
+#ocvedmbrvp .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -421,15 +465,15 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   vertical-align: top;
 }
 
-#mreuedfrij .gt_row_group_first td {
+#ocvedmbrvp .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#mreuedfrij .gt_row_group_first th {
+#ocvedmbrvp .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#mreuedfrij .gt_summary_row {
+#ocvedmbrvp .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -439,16 +483,16 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   padding-right: 15px;
 }
 
-#mreuedfrij .gt_first_summary_row {
+#ocvedmbrvp .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_first_summary_row.thick {
+#ocvedmbrvp .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#mreuedfrij .gt_last_summary_row {
+#ocvedmbrvp .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -458,7 +502,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-bottom-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_grand_summary_row {
+#ocvedmbrvp .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -468,7 +512,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   padding-right: 15px;
 }
 
-#mreuedfrij .gt_first_grand_summary_row {
+#ocvedmbrvp .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -478,7 +522,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-top-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_last_grand_summary_row_top {
+#ocvedmbrvp .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -488,11 +532,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-bottom-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_striped {
+#ocvedmbrvp .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#mreuedfrij .gt_table_body {
+#ocvedmbrvp .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -501,7 +545,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-bottom-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_footnotes {
+#ocvedmbrvp .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -515,7 +559,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-right-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_footnote {
+#ocvedmbrvp .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -524,7 +568,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   padding-right: 15px;
 }
 
-#mreuedfrij .gt_sourcenotes {
+#ocvedmbrvp .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -538,7 +582,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   border-right-color: #D3D3D3;
 }
 
-#mreuedfrij .gt_sourcenote {
+#ocvedmbrvp .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -546,63 +590,63 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
   padding-right: 15px;
 }
 
-#mreuedfrij .gt_left {
+#ocvedmbrvp .gt_left {
   text-align: left;
 }
 
-#mreuedfrij .gt_center {
+#ocvedmbrvp .gt_center {
   text-align: center;
 }
 
-#mreuedfrij .gt_right {
+#ocvedmbrvp .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#mreuedfrij .gt_font_normal {
+#ocvedmbrvp .gt_font_normal {
   font-weight: normal;
 }
 
-#mreuedfrij .gt_font_bold {
+#ocvedmbrvp .gt_font_bold {
   font-weight: bold;
 }
 
-#mreuedfrij .gt_font_italic {
+#ocvedmbrvp .gt_font_italic {
   font-style: italic;
 }
 
-#mreuedfrij .gt_super {
+#ocvedmbrvp .gt_super {
   font-size: 65%;
 }
 
-#mreuedfrij .gt_footnote_marks {
+#ocvedmbrvp .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#mreuedfrij .gt_asterisk {
+#ocvedmbrvp .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#mreuedfrij .gt_indent_1 {
+#ocvedmbrvp .gt_indent_1 {
   text-indent: 5px;
 }
 
-#mreuedfrij .gt_indent_2 {
+#ocvedmbrvp .gt_indent_2 {
   text-indent: 10px;
 }
 
-#mreuedfrij .gt_indent_3 {
+#ocvedmbrvp .gt_indent_3 {
   text-indent: 15px;
 }
 
-#mreuedfrij .gt_indent_4 {
+#ocvedmbrvp .gt_indent_4 {
   text-indent: 20px;
 }
 
-#mreuedfrij .gt_indent_5 {
+#ocvedmbrvp .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -688,23 +732,23 @@ sample estimates:
 <div class="cell">
 <div class="cell-output-display">
 
-<div id="nyjkxdubtb" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#nyjkxdubtb table {
+<div id="xnsfnlrfhq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#xnsfnlrfhq table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#nyjkxdubtb thead, #nyjkxdubtb tbody, #nyjkxdubtb tfoot, #nyjkxdubtb tr, #nyjkxdubtb td, #nyjkxdubtb th {
+#xnsfnlrfhq thead, #xnsfnlrfhq tbody, #xnsfnlrfhq tfoot, #xnsfnlrfhq tr, #xnsfnlrfhq td, #xnsfnlrfhq th {
   border-style: none;
 }
 
-#nyjkxdubtb p {
+#xnsfnlrfhq p {
   margin: 0;
   padding: 0;
 }
 
-#nyjkxdubtb .gt_table {
+#xnsfnlrfhq .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -730,12 +774,12 @@ sample estimates:
   border-left-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_caption {
+#xnsfnlrfhq .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#nyjkxdubtb .gt_title {
+#xnsfnlrfhq .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -747,7 +791,7 @@ sample estimates:
   border-bottom-width: 0;
 }
 
-#nyjkxdubtb .gt_subtitle {
+#xnsfnlrfhq .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -759,7 +803,7 @@ sample estimates:
   border-top-width: 0;
 }
 
-#nyjkxdubtb .gt_heading {
+#xnsfnlrfhq .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -771,13 +815,13 @@ sample estimates:
   border-right-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_bottom_border {
+#xnsfnlrfhq .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_col_headings {
+#xnsfnlrfhq .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -792,7 +836,7 @@ sample estimates:
   border-right-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_col_heading {
+#xnsfnlrfhq .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -812,7 +856,7 @@ sample estimates:
   overflow-x: hidden;
 }
 
-#nyjkxdubtb .gt_column_spanner_outer {
+#xnsfnlrfhq .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -824,15 +868,15 @@ sample estimates:
   padding-right: 4px;
 }
 
-#nyjkxdubtb .gt_column_spanner_outer:first-child {
+#xnsfnlrfhq .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#nyjkxdubtb .gt_column_spanner_outer:last-child {
+#xnsfnlrfhq .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#nyjkxdubtb .gt_column_spanner {
+#xnsfnlrfhq .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -844,11 +888,11 @@ sample estimates:
   width: 100%;
 }
 
-#nyjkxdubtb .gt_spanner_row {
+#xnsfnlrfhq .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#nyjkxdubtb .gt_group_heading {
+#xnsfnlrfhq .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -874,7 +918,7 @@ sample estimates:
   text-align: left;
 }
 
-#nyjkxdubtb .gt_empty_group_heading {
+#xnsfnlrfhq .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -889,15 +933,15 @@ sample estimates:
   vertical-align: middle;
 }
 
-#nyjkxdubtb .gt_from_md > :first-child {
+#xnsfnlrfhq .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#nyjkxdubtb .gt_from_md > :last-child {
+#xnsfnlrfhq .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#nyjkxdubtb .gt_row {
+#xnsfnlrfhq .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -916,7 +960,7 @@ sample estimates:
   overflow-x: hidden;
 }
 
-#nyjkxdubtb .gt_stub {
+#xnsfnlrfhq .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -929,7 +973,7 @@ sample estimates:
   padding-right: 15px;
 }
 
-#nyjkxdubtb .gt_stub_row_group {
+#xnsfnlrfhq .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -943,15 +987,15 @@ sample estimates:
   vertical-align: top;
 }
 
-#nyjkxdubtb .gt_row_group_first td {
+#xnsfnlrfhq .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#nyjkxdubtb .gt_row_group_first th {
+#xnsfnlrfhq .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#nyjkxdubtb .gt_summary_row {
+#xnsfnlrfhq .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -961,16 +1005,16 @@ sample estimates:
   padding-right: 15px;
 }
 
-#nyjkxdubtb .gt_first_summary_row {
+#xnsfnlrfhq .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_first_summary_row.thick {
+#xnsfnlrfhq .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#nyjkxdubtb .gt_last_summary_row {
+#xnsfnlrfhq .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -980,7 +1024,7 @@ sample estimates:
   border-bottom-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_grand_summary_row {
+#xnsfnlrfhq .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -990,7 +1034,7 @@ sample estimates:
   padding-right: 15px;
 }
 
-#nyjkxdubtb .gt_first_grand_summary_row {
+#xnsfnlrfhq .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -1000,7 +1044,7 @@ sample estimates:
   border-top-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_last_grand_summary_row_top {
+#xnsfnlrfhq .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -1010,11 +1054,11 @@ sample estimates:
   border-bottom-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_striped {
+#xnsfnlrfhq .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#nyjkxdubtb .gt_table_body {
+#xnsfnlrfhq .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1023,7 +1067,7 @@ sample estimates:
   border-bottom-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_footnotes {
+#xnsfnlrfhq .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1037,7 +1081,7 @@ sample estimates:
   border-right-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_footnote {
+#xnsfnlrfhq .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1046,7 +1090,7 @@ sample estimates:
   padding-right: 15px;
 }
 
-#nyjkxdubtb .gt_sourcenotes {
+#xnsfnlrfhq .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1060,7 +1104,7 @@ sample estimates:
   border-right-color: #D3D3D3;
 }
 
-#nyjkxdubtb .gt_sourcenote {
+#xnsfnlrfhq .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1068,63 +1112,63 @@ sample estimates:
   padding-right: 15px;
 }
 
-#nyjkxdubtb .gt_left {
+#xnsfnlrfhq .gt_left {
   text-align: left;
 }
 
-#nyjkxdubtb .gt_center {
+#xnsfnlrfhq .gt_center {
   text-align: center;
 }
 
-#nyjkxdubtb .gt_right {
+#xnsfnlrfhq .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#nyjkxdubtb .gt_font_normal {
+#xnsfnlrfhq .gt_font_normal {
   font-weight: normal;
 }
 
-#nyjkxdubtb .gt_font_bold {
+#xnsfnlrfhq .gt_font_bold {
   font-weight: bold;
 }
 
-#nyjkxdubtb .gt_font_italic {
+#xnsfnlrfhq .gt_font_italic {
   font-style: italic;
 }
 
-#nyjkxdubtb .gt_super {
+#xnsfnlrfhq .gt_super {
   font-size: 65%;
 }
 
-#nyjkxdubtb .gt_footnote_marks {
+#xnsfnlrfhq .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#nyjkxdubtb .gt_asterisk {
+#xnsfnlrfhq .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#nyjkxdubtb .gt_indent_1 {
+#xnsfnlrfhq .gt_indent_1 {
   text-indent: 5px;
 }
 
-#nyjkxdubtb .gt_indent_2 {
+#xnsfnlrfhq .gt_indent_2 {
   text-indent: 10px;
 }
 
-#nyjkxdubtb .gt_indent_3 {
+#xnsfnlrfhq .gt_indent_3 {
   text-indent: 15px;
 }
 
-#nyjkxdubtb .gt_indent_4 {
+#xnsfnlrfhq .gt_indent_4 {
   text-indent: 20px;
 }
 
-#nyjkxdubtb .gt_indent_5 {
+#xnsfnlrfhq .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -1180,10 +1224,14 @@ y \sim \operatorname{Binomial}(n, \pi)
 <p><span class="math display">\[
 \frac{\text{Number of successes}}{\text{Number of trials}}
 \]</span></p>
+<p>Or:</p>
+<p><span class="math display">\[
+\frac{\text{Number of successes}}{\text{Number of successes} + \text{Number of failures}}
+\]</span></p>
 <p>Expressed in terms of our data on woodland visitors in the UK Public Opinion of Forestry 2023 survey:</p>
 <p><span class="math display">\[
 \frac{\text{Number of woodland visitors}}{\text{Number of respondents}}
-\]</span> We can split the denominator into woodland visitors and non-visitors:</p>
+\]</span> Similarly, we can split the denominator into woodland visitors and non-visitors:</p>
 <p><span class="math display">\[
 \frac{\text{Number of woodland visitors}}{(\text{Number of woodland visitors}) + (\text{Number of non-visitors)}}
 \]</span></p>
@@ -1211,7 +1259,7 @@ y \sim \operatorname{Binomial}(n, \pi)
 <p><img src="public-opinion-bayes-prop-guide_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
-<p>We have already seen the data and know that the proportion of woodland visitors is around 73% of male respondents and 76% for female respondents. But let’s pretend that we haven’t seen the data and all our prior knowledge is based on the 2021 Public Opinion of Forestry survey. In the previous survey, 69% of both male and female respondents reported visiting woodland in the last few years. To make the maths easier, let’s say 70% instead. This implies something like a Beta(7, 3) distribution (since <span class="math inline">\(\frac{7}{7+3} = 0.7\)</span>), with lots of high possible values greater than 50% but not a lot lower than 40%. We could narrow this down by scaling up the parameters (e.g., Beta(70, 30)), but leaving the prior distribution wide like this allows for more possible responses.</p>
+<p>We have already seen the data and know that the proportion of woodland visitors is around 73% of male respondents and 76% for female respondents. But let’s pretend that we haven’t seen the data and all our prior knowledge is based on the 2021 Public Opinion of Forestry survey. In the previous survey, 69% of respondents reported visiting woodland in the last few years. To make the maths easier, let’s say 70% instead. This implies something like a Beta(7, 3) distribution (since <span class="math inline">\(\frac{7}{7+3} = 0.7\)</span>), with lots of high possible values greater than 50% but not a lot lower than 40%. We could narrow this down by scaling up the parameters (e.g., Beta(70, 30)), but leaving the prior distribution wide like this allows for more possible responses.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stat_function</span>(<span class="at">fun =</span> <span class="sc">~</span><span class="fu">dbeta</span>(., <span class="dv">7</span>, <span class="dv">3</span>), <span class="at">geom =</span> <span class="st">"area"</span>, <span class="at">fill =</span> <span class="st">"#AC3414"</span>) <span class="sc">+</span></span>
@@ -1271,23 +1319,23 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
 <div class="cell">
 <div class="cell-output-display">
 
-<div id="xjiqisxcjr" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#xjiqisxcjr table {
+<div id="kihuygfmiq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#kihuygfmiq table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#xjiqisxcjr thead, #xjiqisxcjr tbody, #xjiqisxcjr tfoot, #xjiqisxcjr tr, #xjiqisxcjr td, #xjiqisxcjr th {
+#kihuygfmiq thead, #kihuygfmiq tbody, #kihuygfmiq tfoot, #kihuygfmiq tr, #kihuygfmiq td, #kihuygfmiq th {
   border-style: none;
 }
 
-#xjiqisxcjr p {
+#kihuygfmiq p {
   margin: 0;
   padding: 0;
 }
 
-#xjiqisxcjr .gt_table {
+#kihuygfmiq .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -1313,12 +1361,12 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-left-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_caption {
+#kihuygfmiq .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#xjiqisxcjr .gt_title {
+#kihuygfmiq .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1330,7 +1378,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-bottom-width: 0;
 }
 
-#xjiqisxcjr .gt_subtitle {
+#kihuygfmiq .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1342,7 +1390,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-top-width: 0;
 }
 
-#xjiqisxcjr .gt_heading {
+#kihuygfmiq .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1354,13 +1402,13 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-right-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_bottom_border {
+#kihuygfmiq .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_col_headings {
+#kihuygfmiq .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1375,7 +1423,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-right-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_col_heading {
+#kihuygfmiq .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1395,7 +1443,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   overflow-x: hidden;
 }
 
-#xjiqisxcjr .gt_column_spanner_outer {
+#kihuygfmiq .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1407,15 +1455,15 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   padding-right: 4px;
 }
 
-#xjiqisxcjr .gt_column_spanner_outer:first-child {
+#kihuygfmiq .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#xjiqisxcjr .gt_column_spanner_outer:last-child {
+#kihuygfmiq .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#xjiqisxcjr .gt_column_spanner {
+#kihuygfmiq .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1427,11 +1475,11 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   width: 100%;
 }
 
-#xjiqisxcjr .gt_spanner_row {
+#kihuygfmiq .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#xjiqisxcjr .gt_group_heading {
+#kihuygfmiq .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -1457,7 +1505,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   text-align: left;
 }
 
-#xjiqisxcjr .gt_empty_group_heading {
+#kihuygfmiq .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1472,15 +1520,15 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   vertical-align: middle;
 }
 
-#xjiqisxcjr .gt_from_md > :first-child {
+#kihuygfmiq .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#xjiqisxcjr .gt_from_md > :last-child {
+#kihuygfmiq .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#xjiqisxcjr .gt_row {
+#kihuygfmiq .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -1499,7 +1547,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   overflow-x: hidden;
 }
 
-#xjiqisxcjr .gt_stub {
+#kihuygfmiq .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1512,7 +1560,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   padding-right: 15px;
 }
 
-#xjiqisxcjr .gt_stub_row_group {
+#kihuygfmiq .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1526,15 +1574,15 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   vertical-align: top;
 }
 
-#xjiqisxcjr .gt_row_group_first td {
+#kihuygfmiq .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#xjiqisxcjr .gt_row_group_first th {
+#kihuygfmiq .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#xjiqisxcjr .gt_summary_row {
+#kihuygfmiq .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1544,16 +1592,16 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   padding-right: 15px;
 }
 
-#xjiqisxcjr .gt_first_summary_row {
+#kihuygfmiq .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_first_summary_row.thick {
+#kihuygfmiq .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#xjiqisxcjr .gt_last_summary_row {
+#kihuygfmiq .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -1563,7 +1611,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-bottom-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_grand_summary_row {
+#kihuygfmiq .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1573,7 +1621,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   padding-right: 15px;
 }
 
-#xjiqisxcjr .gt_first_grand_summary_row {
+#kihuygfmiq .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -1583,7 +1631,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-top-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_last_grand_summary_row_top {
+#kihuygfmiq .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 15px;
@@ -1593,11 +1641,11 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-bottom-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_striped {
+#kihuygfmiq .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#xjiqisxcjr .gt_table_body {
+#kihuygfmiq .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1606,7 +1654,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-bottom-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_footnotes {
+#kihuygfmiq .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1620,7 +1668,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-right-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_footnote {
+#kihuygfmiq .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -1629,7 +1677,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   padding-right: 15px;
 }
 
-#xjiqisxcjr .gt_sourcenotes {
+#kihuygfmiq .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1643,7 +1691,7 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   border-right-color: #D3D3D3;
 }
 
-#xjiqisxcjr .gt_sourcenote {
+#kihuygfmiq .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1651,63 +1699,63 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&amp;\ \operatorname{Binomial}(n_
   padding-right: 15px;
 }
 
-#xjiqisxcjr .gt_left {
+#kihuygfmiq .gt_left {
   text-align: left;
 }
 
-#xjiqisxcjr .gt_center {
+#kihuygfmiq .gt_center {
   text-align: center;
 }
 
-#xjiqisxcjr .gt_right {
+#kihuygfmiq .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#xjiqisxcjr .gt_font_normal {
+#kihuygfmiq .gt_font_normal {
   font-weight: normal;
 }
 
-#xjiqisxcjr .gt_font_bold {
+#kihuygfmiq .gt_font_bold {
   font-weight: bold;
 }
 
-#xjiqisxcjr .gt_font_italic {
+#kihuygfmiq .gt_font_italic {
   font-style: italic;
 }
 
-#xjiqisxcjr .gt_super {
+#kihuygfmiq .gt_super {
   font-size: 65%;
 }
 
-#xjiqisxcjr .gt_footnote_marks {
+#kihuygfmiq .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#xjiqisxcjr .gt_asterisk {
+#kihuygfmiq .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#xjiqisxcjr .gt_indent_1 {
+#kihuygfmiq .gt_indent_1 {
   text-indent: 5px;
 }
 
-#xjiqisxcjr .gt_indent_2 {
+#kihuygfmiq .gt_indent_2 {
   text-indent: 10px;
 }
 
-#xjiqisxcjr .gt_indent_3 {
+#kihuygfmiq .gt_indent_3 {
   text-indent: 15px;
 }
 
-#xjiqisxcjr .gt_indent_4 {
+#kihuygfmiq .gt_indent_4 {
   text-indent: 20px;
 }
 
-#xjiqisxcjr .gt_indent_5 {
+#kihuygfmiq .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
