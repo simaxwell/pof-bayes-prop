@@ -27,7 +27,7 @@ The report is heavily (!) based on the fantastic blog post [A guide to Bayesian 
 
 # Setup
 
-The first thing we need to do is load all the necessary packages for the analysis. Note that `ggGSS` is a personal, in-house package for producing data visualisations that match Government Statistical Service/Government Analysis Function guidance:
+The first thing we need to do is load all the necessary packages for the analysis. Note that {ggGSS} is a personal, in-house package for producing data visualisations that match Government Statistical Service/Government Analysis Function guidance:
 
 ```{r}
 #| label: pkg-load
@@ -887,13 +887,33 @@ q3_df <- wc_df |>
   mutate(across(where(is.factor), as.character))
 ```
 
-Run the model:
+### Setting priors
+
+```{r}
+#| label: q2-get-prior
+get_prior(formula = bf(n | trials(total) ~ 0 + support),
+          data = q3_df,
+          family = beta_binomial(link = "identity",
+                                 link_phi = "identity"))
+```
+
+```{r}
+#| label: q3-set-prior
+prior_q3 <- c(
+  set_prior("beta(1, 1)", class = "b", lb = 0, ub = 1),
+  set_prior("exponential(0.001)", class = "phi", lb = 0)
+)
+```
+
+### Run the model:
 
 ```{r}
 q3_beta_binomial_model <- brm(
   bf(n | trials(total) ~ 0 + support),
   data = q3_df,
-  family = beta_binomial(),
+  family = beta_binomial(link = "identity",
+                         link_phi = "identity"),
+  prior = prior_q3,
   init = 0.1,
   chains = CHAINS,
   warmup = WARMUP,
@@ -959,24 +979,6 @@ q3_beta_binomial_diffs <- q3_beta_binomial_model |>
 
 ```{r}
 #| label: fig10
-q3_beta_binomial_diffs |> 
-  ggplot(aes(x = .epred_prop, y = support, fill = support)) +
-  stat_halfeye(fill = "#B78C01") +
-  geom_vline(xintercept = 0,
-             linetype = "dashed") +
-  scale_x_continuous(expand = expansion(mult = c(0, 0.04)),
-                     labels = label_pp,
-                     limits = c(-1, 1)) +
-  labs(x = "Percentage point difference in proportions",
-       y = NULL) +
-  theme_gss(grid = "x",
-            tick_mark = "y",
-            legend.position = "none")
-```
-
-#### Figure 11: 
-
-```{r}
 q3_beta_binomial_diffs |> 
   ggplot(aes(x = .epred_prop, fill = support, pattern_fill = support)) +
   # stat_halfeye(show.legend = FALSE) +
