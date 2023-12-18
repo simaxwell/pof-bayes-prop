@@ -3,7 +3,7 @@ title: "A guide to Bayesian proportion tests with R and {brms}"
 subtitle: "Using data from the UK Public Opinion of Forestry 2023 survey"
 description: "Forest Research"
 author: "Si Maxwell"
-date: last-modified
+date: "2023/09/01"
 date-format: "D MMMM YYYY"
 title-block-banner: "white"
 title-block-banner-color: "black"
@@ -14,6 +14,7 @@ format:
     toc: true
     toc-location: left
     toc-title: "Contents"
+fig-cap-location: top
 editor: visual
 editor_options: 
   chunk_output_type: console
@@ -21,13 +22,13 @@ editor_options:
 
 # Introduction
 
-This report is a development opportunity for me and a guide for others to better understand Bayesian inference. In it I explore Bayesian proportion tests in R using the {brms} package and data from the Public Opinion of Forestry 2023: UK survey, conducted by YouGov on behalf of Forest Research. The survey asked 11,055 adults (aged 16+) in the UK a range of questions on forestry and forestry-related issues. Here we will explore the results of two questions from the survey: the proportion of respondents who visited woodland in the last few years, and the proportion of respondents that support new woodland creation (afforestation) in response to the threat of climate change.
+This report is a development opportunity for me and a guide for others to better understand Bayesian inference. In it I explore Bayesian proportion tests in R using the {brms} package and data from the [Public Opinion of Forestry 2023: UK](https://www.forestresearch.gov.uk/tools-and-resources/statistics/statistics-by-topic/public-opinion-of-forestry/) survey, conducted by YouGov on behalf of Forest Research. The survey asked 11,055 adults (aged 16+) in the UK a range of questions on forestry and forestry-related issues. Here we will explore the results of two questions from the survey: the proportion of respondents who visited woodland in the last few years, and the proportion of respondents that support new woodland creation (afforestation) in response to the threat of climate change.
 
-The report is heavily (!) based on the fantastic blog post [A guide to Bayesian proportion tests with R and {brms}](https://www.andrewheiss.com/blog/2023/05/15/fancy-bayes-diffs-props/) by Andrew Heiss, assistant professor at Georgia State University (published 15 May 2023). Andrew's blog was inspired by a [blog post](https://www.sumsar.net/blog/2014/06/bayesian-first-aid-prop-test/) and R package by data scientist Rasmus Bååth (published 27 June 2014).
+The report is heavily (heavily!) based on the fantastic blog post [A guide to Bayesian proportion tests with R and {brms}](https://www.andrewheiss.com/blog/2023/05/15/fancy-bayes-diffs-props/) by Andrew Heiss, assistant professor at Georgia State University (published 15 May 2023). Andrew's blog was inspired by a [blog post](https://www.sumsar.net/blog/2014/06/bayesian-first-aid-prop-test/) and R package by data scientist Rasmus Bååth (published 27 June 2014).
 
 # Setup
 
-The first thing we need to do is load all the necessary packages for the analysis. Note that {ggGSS} is a personal, in-house package for producing data visualisations that match Government Statistical Service/Government Analysis Function guidance:
+The first thing we need to do is load all the necessary packages for the analysis. Note that {ggGSS} is a personal, in-house package for producing data visualisations that match [Government Statistical Service and Analysis Function guidance](https://analysisfunction.civilservice.gov.uk/policy-store/data-visualisation-charts/):
 
 ```{r}
 #| label: pkg-load
@@ -91,15 +92,15 @@ q2_raw <- tribble(
   mutate(across(where(is.numeric), ~round(.x, 0)))
 ```
 
-Note that I use the weighted totals which more accurately reflect the socio-demographic structure of the British population. The `mutate` call rounds all numeric columns to whole numbers (integers) as counts are needed for the models.
+Note that I use the weighted totals which means the results more accurately reflect the socio-demographic structure of the British population. The `mutate` call rounds all numeric columns to whole numbers (integers) as counts are needed for the models.
 
 # The questions
 
 The aim of this article is to illustrate the logic of Bayesian proportion tests using data from the Public Opinion of Forestry 2023: UK survey. To do this we will explore three research questions:
 
-1. Is the proportion of women that visited woodland in the last few years higher than the proportion of men?
+1.  Is the proportion of women that visited woodland in the last few years higher than the proportion of men?
 2.  Is there a difference between the proportion of men and women that support afforestation as a climate change mitigation strategy?
-3. Does support for afforestation vary among the UK population?
+3.  Does support for afforestation vary among the UK population?
 
 The first question we are going to explore is labelled KFW_Q1a in the YouGov spreadsheet. The question asked to all respondents was:
 
@@ -107,8 +108,8 @@ The first question we are going to explore is labelled KFW_Q1a in the YouGov spr
 
 Respondents could select one of two options:
 
-1. Yes, I have, or
-2. No, I haven't.
+1.  Yes, I have, or
+2.  No, I haven't.
 
 For analysis 1 we will look at the proportion that answered "Yes, I have".
 
@@ -118,12 +119,12 @@ The second question we are going to explore is labelled SFW_Q14_2 in the YouGov 
 
 Respondents were given six possible options:
 
-* Strongly agree,
-* Tend to agree,
-* Neither agree nor disagree,
-* Tend to disagree,
-* Strongly disagree, and
-* Don't know.
+-   Strongly agree,
+-   Tend to agree,
+-   Neither agree nor disagree,
+-   Tend to disagree,
+-   Strongly disagree, and
+-   Don't know.
 
 With this question we are going to look at both the difference between men and women and among the population as a whole.
 
@@ -139,23 +140,23 @@ For analysis 2, we will look at the difference between men and women that answer
 
 # Analysis 1: woodland engagement among men and women
 
-For our first question, we want to know if there is a substantial difference in the proportion of woodland visitors that are male and the proportion of woodland visitors that are female, or whether the difference between the proportions is zero (highlighted blue in Table 1).
+For our first question, we want to know if there is a substantial difference in the proportion of woodland visitors that are male and the proportion of woodland visitors that are female, or whether the difference between the proportions is zero (highlighted blue in @tbl-1).
 
 ```{r}
 #| label: table1-build
 #| include: false
 table1 <- q1_raw |> 
   mutate(prop = n / total) |> 
-  mutate(label = glue("{prop}<br><span style='font-size:70%'>({n})</span>",
+  mutate(label = glue("{prop}<br><span style='font-size:70%'>({n} of {total})</span>",
                      prop = label_percent()(prop),
-                     n = label_comma()(n))) |> 
+                     n = label_comma()(n),
+                     total = label_comma()(total))) |> 
   select(-c(n, total, prop))
 ```
 
-#### Table 1: Contingency table showing the proportion of men and women that visited woodland in the last few years, UK, 2023
-
 ```{r}
-#| label: table1
+#| label: tbl-1
+#| tbl-cap: "Contingency table showing the proportion of men and women that visited woodland in the last few years, UK, 2023"
 #| echo: false
 table1 |> 
   gt() |> 
@@ -171,6 +172,7 @@ table1 |>
   opt_horizontal_padding(3) |> 
   tab_options(column_labels.font.weight = "bold",
               row_group.font.weight = "bold") |> 
+  tab_footnote(footnote = "Source: Public Opinion of Forestry 2023: UK survey. Crown copyright © Forest Research (2023).") |> 
   tab_style(
     style = list(
       cell_fill(color = colorspace::lighten("#12436D", 0.8)),
@@ -192,13 +194,17 @@ Before we begin our Bayesian analysis, let's take a look at the classical freque
 
 ## Classical frequentist way
 
-...
+In classical frequentist statistics we do not test the alternative hypothesis (in this case that there is a difference between the proportion of men and woman that visited woodland in the last few years). Instead, we test the null hypothesis (in this case that there is no difference between the proportions). If we reject the null hypothesis this lends support to the alternative hypothesis but we do not explicitly test the alternative hypothesis in the frequestist paradigm (thankfully we do in Bayesian statistics - more on that in the next section).
 
-Null hypothesis:
+Written out in formula notation, our null hypothesis is that:
 
 $$
 \theta = 0
 $$
+
+To test the null hypothesis we will use R's `prop.test()` function. Our task here is to calculate a test statistic (in this case $\chi^2$) for $\theta$, determine the probability of seeing that statistic in a world where $\theta$ is 0 and infer whether the value we see could plausibly fit in a world where the null hypothesis is true.
+
+We need to pass `prop.test()` a 2-column matrix with the number of people that visited woodland (`n`) and the number of people that did not visit woodland (`n_didnt`). To do this we first need to subtract `n` from `total`, remove the `gender` and `total` columns and convert to a matrix.
 
 ```{r}
 #| label: q1-matrix
@@ -217,7 +223,9 @@ We can now pass `q1_matrix` to `prop.test()`:
 prop.test(q1_matrix)
 ```
 
-We have proportions that are the same as in Table 1 (75.5% / 72.6%) and the 95% confidence interval for the difference. R doesn't show us the difference in proportions but the `parameters()` function from the {parameters} package will (Table 2).
+This tells us that we have performed a "2-sample test for equality of proportions with continuity correction".
+
+We have proportions that are the same as in @tbl-1 (75.5% / 72.6%) and the 95% confidence interval for the difference. R doesn't show us the difference in proportions but the `parameters()` function from the {parameters} package will (@tbl-2).
 
 ```{r}
 #| label: prop-test-print
@@ -226,10 +234,9 @@ prop.test(q1_matrix) |>
   model_parameters()
 ```
 
-#### Table 2:
-
 ```{r}
-#| label: table2
+#| label: tbl-2
+#| tbl-cap: "Summary results from the 2-sample test for equality of proportions"
 #| echo: false
 prop.test(q1_matrix) |> 
   model_parameters() |> 
@@ -237,10 +244,9 @@ prop.test(q1_matrix) |>
   cols_hide(columns = c("CI", "df", "Alternative")) |> 
   cols_label(
     CI_low = "CI low",
-    CI_high = "CI high"
+    CI_high = "CI high",
+    Chi2 = "{{:Chi:^2}}"
   ) |>
-  # cols_align(align = c("left"),
-  #            columns = support) |> 
   fmt_markdown(
     columns = everything()
   ) |> 
@@ -250,11 +256,12 @@ prop.test(q1_matrix) |>
              decimals = 2) |> 
   fmt_scientific(columns = "p") |> 
   opt_horizontal_padding(3) |> 
+  tab_footnote("CI: 95% confidence interval.") |> 
   tab_options(column_labels.font.weight = "bold",
               row_group.font.weight = "bold")
 ```
 
-We have a $\chi^2$ statistic of 11.89 which is statistically significant. In a hypothetical world where there's no difference in the proportions, the probability of seeing a difference of at least 2.89 percentage points is tiny ($p < 0.001$). We, therefore, have enough evidence to confidently reject the null hypothesis and declare that the proportions are not the same. With the confidence interval, we can say with 95% confidence that the interval 1.24 pp to 4.55 pp contains the true population parameter.
+We have a $\chi^2$ statistic of 11.89 which is statistically significant. In a hypothetical world where there's no difference in the proportions, the probability of seeing a difference of at least 2.89 percentage points is small ($p < 0.001$). We, therefore, have enough evidence to confidently reject the null hypothesis and declare that the proportions are not the same. With the confidence interval, we can say with 95% confidence that the interval 1.24 pp to 4.55 pp contains the true population parameter.
 
 Let's leave the frequentist paradigm behind.
 
@@ -270,9 +277,9 @@ $$
 
 Where:
 
-1. $y$ = number of successes: in our case, the number of respondents who visited woodland in the last few years (`n`).
+1.  $y$ = number of successes: in our case, the number of respondents who visited woodland in the last few years (`n`).
 2.  $\pi$ = probability of success: the probability that someone visited woodland in the last few years (this is the thing we want to model for each gender).
-3. $n$ = number of trials: in our case, the total number of respondents (`total`).
+3.  $n$ = number of trials: in our case, the total number of respondents (`total`).
 
 We are interested in the probability of a "success" (i.e., $\pi$), which is the number of successes divided by the total number of trials:
 
@@ -298,18 +305,17 @@ $$
 \pi = \frac{\text{Number of woodland visitors}}{(\text{Number of woodland visitors} + \text{Number of non-visitors)}}
 $$
 
-It is $\pi$ that we are going to estimate. We are going to model $\pi$ using the beta-binomial distribution. The beta-binomial distribution is the binomial distribution in which the probability of success at each of $n$ trials is not fixed but randomly drawn from a beta distribution. It is bound by the the interval [0, 1], which is ideal because $\pi$ is a proportion somewhere between 0 and 1 (i.e., 0% and 100%). (This is set out formulaically later.) The beta distribution is defined by two positive shape parameters: $\alpha$ and $\beta$, where $\alpha$ and $\beta$ correspond to the number of successes (answered "yes") and failures (answered "no"), respectively:
+It is $\pi$ that we are going to estimate. We are going to model $\pi$ using the beta-binomial distribution. The beta-binomial distribution is the binomial distribution in which the probability of success at each of $n$ trials is not fixed but randomly drawn from a beta distribution. It is bound by the interval \[0, 1\], which is ideal because $\pi$ is a proportion somewhere between 0 and 1 (i.e., 0% and 100%). (This is set out formulaically later.) The beta distribution is defined by two positive shape parameters: $\alpha$ and $\beta$, where $\alpha$ and $\beta$ correspond to the number of successes (answered "yes") and failures (answered "no"), respectively:
 
 $$
 \pi = \frac{\alpha}{\alpha + \beta}
 $$
 
-With these shape parameters we can create any percentage/proportion we want in order to model $\pi$. In addition, we can control for the uncertainty of the distribution by changing the size of the parameters. For instance, if we think that there is a 60% chance of some event occuring, this could be represented by $\alpha = 3$ and $\beta = 2$, since $\frac{3}{3+2} = 0.6$. We could also write it as $\alpha = 30$ and $\beta = 20$, since $\frac{30}{30+20} = 0.6$ too. Both are centred at 60% but Beta(30, 20) is a lot narrower than Beta(3, 2) (Figure 2).
-
-#### Figure 2: Beta(3, 2) and Beta(30, 20) distributions
+With these shape parameters we can create any percentage/proportion we want in order to model $\pi$. In addition, we can control for the uncertainty of the distribution by changing the size of the parameters. For instance, if we think that there is a 60% chance of some event occuring, this could be represented by $\alpha = 3$ and $\beta = 2$, since $\frac{3}{3+2} = 0.6$. We could also write it as $\alpha = 30$ and $\beta = 20$, since $\frac{30}{30+20} = 0.6$ too. Both are centred at 60% but Beta(30, 20) is a lot narrower than Beta(3, 2) (@fig-1).
 
 ```{r}
-#| label: pi-dist-check
+#| label: fig-1
+#| fig-cap: "Beta(3, 2) and Beta(30, 20) distributions"
 #| include: true
 ggplot() +
   stat_function(fun = ~dbeta(., 3, 2), geom = "area",
@@ -324,22 +330,23 @@ ggplot() +
        fill = NULL) +
   theme_gss(axis.text.y = element_blank(),
             legend.position = "bottom",
+            tick_mark = "x",
             font_size = 18)
 ```
 
-We have already seen the data and know that the proportion of woodland visitors is around 73% for men and 76% for women. But let's pretend that we haven't seen the data and all our prior knowledge is based on the 2021 Public Opinion of Forestry survey. In the previous survey, 69% of respondents reported visiting woodland in the last few years. To make the maths easier, let's say 70% instead. This implies something like a Beta(7, 3) distribution (since $\frac{7}{7+3} = 0.7$). We could narrow this down by using the Beta(70, 30) distribution, but leaving the prior wide like this allows for more possible responses (Figure 3).
-
-#### Figure 3: Beta(7, 3) distribution
+We have already seen the data and know that the proportion of woodland visitors is around 73% for men and 76% for women. But let's pretend that we haven't seen the data and all our prior knowledge is based on the 2021 Public Opinion of Forestry survey. In the previous survey, 69% of respondents reported visiting woodland in the last few years. To make the maths easier, let's say 70% instead. This implies something like a Beta(7, 3) distribution (since $\frac{7}{7+3} = 0.7$). We could narrow this down by using the Beta(70, 30) distribution, but leaving the prior wide like this allows for more possible responses (@fig-2).
 
 ```{r}
-#| label: pi-dist
+#| label: fig-2
+#| fig-cap: "Beta(7, 3) distribution"
 #| include: true
 ggplot() +
   stat_function(fun = ~dbeta(., 7, 3),
                 geom = "area",
                 fill = "#8C0000") +
   scale_x_continuous(labels = label_percent()) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02)),
+                     limits = c(0, 3)) +
   labs(x = "Possible values for π",
        y = NULL,
        fill = NULL) +
@@ -348,15 +355,14 @@ ggplot() +
             font_size = 18)
 ```
 
-Instead of using the shape parameters $\alpha$ and $\beta$, {brms} uses mean ($\mu$) and precision or overdispersion ($\phi$) parameterisation for the beta-binomial family. Fortunately, we and express one in the terms of the others:
+Instead of using the shape parameters $\alpha$ and $\beta$, {brms} uses mean ($\mu$) and precision or overdispersion ($\phi$) parameterisation for the beta-binomial family. Fortunately, the conversion is simple:
 
 $$
 \begin{aligned}
 \text{Shape 1:} && \alpha &= \mu \times \phi \\
 \text{Shape 2:} && \beta &= (1 - \mu) \times \phi
 \end{aligned}
-$$
-This means that:
+$$ This means that:
 
 $$
 \begin{aligned}
@@ -378,18 +384,18 @@ $$
 \end{aligned}
 $$
 
-#### Figure 4: Exponential(1/1000) distribution
+There should be a line here explaining and referencing @fig-3.
 
 ```{r}
-# Exponential:
-#| label: phi-dist-check
+#| label: fig-3
+#| fig-cap: "Exponential(1/1000) distribution"
 ggplot() +
   stat_function(fun = ~dexp(., 0.001),
                 geom = "area",
                 fill = "#8C0000") +
   scale_x_continuous(label = comma_format(),
                      limits = c(0, 5000)) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.02))) +
   labs(x = "Possible values for φ",
        y = NULL,
        fill = NULL) +
@@ -400,7 +406,7 @@ ggplot() +
 
 Note that when $\phi = 0$ (i.e., no overdispersion), the beta-binomial model reduces to having the same variance as the binomial distribution.
 
-Okay, so with our Beta(7, 3) prior, we now have all the information we need to specify the official formal model of the data generating process for our estimand without a null hypothesis in sight:
+Okay, so with our Beta(7, 3) prior, we now have all the information we need to specify the formal model of the data generating process for our estimand without a null hypothesis in sight:
 
 $$
 \begin{aligned}
@@ -416,12 +422,12 @@ y_{n \text{ woodland visitor}_\text{male}} \sim&\ \operatorname{Binomial}(n_{\te
 \alpha_\text{female}, \alpha_\text{male} =&\ 7 \\
 \beta_\text{female}, \beta_\text{male} =&\ 3
 \end{aligned}
-$$
+$$ 
 Let's jump into {brms}.
 
 ### Setting priors
 
-The {brms} package had a handy function for identifying the parameters we can set (i.e., our priors). By passing our equation, data set and family to the `get_prior` function we can see which parameters can be modeled and {brms}'s defaults:
+The {brms} package has a handy function for identifying the parameters we can set (i.e., our priors). By passing our equation, data set and family to the `get_prior` function we can see which parameters can be modeled and {brms}'s defaults:
 
 ```{r}
 #| label: q1-get-prior
@@ -433,9 +439,9 @@ get_prior(formula = bf(n | trials(total) ~ 0 + gender),
 
 We get three useful pieces of information from the output of the `get_prior` function:
 
-1. The default priors for gender are "flat" (i.e., all values are equally likely). We are going to change this using our *a priori* knowledge.
-2. Using the `coef` argument, we can set separate priors for the male and female woodland visitor proportions (where each will require a unique `set_prior` call). Doing that would be overkill here. Handily, setting `class = "b"` (i.e., population-level "fixed" effect) will ensure the same prior for each gender.
-3. The default prior for $\phi$ (the precision parameter) is $\text{Gamma}(0.01, 0.01)$.
+1.  The default priors for gender are "flat" (i.e., all values are equally likely). We are going to change this using our *a priori* knowledge.
+2.  Using the `coef` argument, we can set separate priors for the male and female woodland visitor proportions (where each will require a unique `set_prior` call). Doing that would be overkill here. Handily, setting `class = "b"` (i.e., population-level "fixed" effect) will ensure the same prior for each gender.
+3.  The default prior for $\phi$ (the precision parameter) is $\text{Gamma}(0.01, 0.01)$.
 
 Let's set our priors and save them as an object called `prior_q1`. Note `lb` and `ub` refer to the lower and upper bounds, respectively:
 
@@ -453,6 +459,7 @@ Now we have set our priors, let's run our first Bayesian model:
 
 ```{r}
 #| label: q1-bb-model
+#| output: false
 q1_beta_binomial_model <- brm(
   bf(n | trials(total) ~ 0 + gender),
   data = q1_raw,
@@ -470,26 +477,27 @@ q1_beta_binomial_model <- brm(
 
 It can take a little while to compile the Stan program. But running these small models is pretty quick.
 
-#### Figure 5: Posterior distributions of the proportion of <b style="color: white; background-color: #89CFF0;" >men</b> and <b style="color: white; background-color: #F4C2C2;">women</b> that visited woodland in the last few years
+The posterior distributions of the proportion of men and women that visited woodland in the last few years is shown in @fig-4 and @tbl-3.
 
 ```{r}
-#| label: fig5
+#| label: fig-4
+#| fig-cap: 'Posterior distributions of the proportion of <b style="color: white; background-color: #89CFF0;" >men</b> and <b style="color: white; background-color: #F4C2C2;">women</b> that visited woodland in the last few years'
 q1_beta_binomial_model |> 
   epred_draws(newdata = q1_raw) %>% 
   mutate(.epred_prop = .epred / total) %>% 
   ggplot(aes(x = .epred_prop, y = gender, fill = gender)) +
   stat_halfeye() +
-  scale_x_continuous(expand = expansion(mult = c(0.02, 0.02)),
+  scale_x_continuous(expand = expansion(mult = c(0.04, 0.04)),
                      labels = label_percent(),
                      limits = c(0.4, 0.9)) +
-  scale_y_discrete(expand = expansion(mult = c(0.1, 0))) +
+  scale_y_discrete(expand = expansion(mult = c(0.1, 0.02))) +
   scale_fill_manual(values = c("#F4C2C2", "#89CFF0")) +
   labs(x = "Proportion of respondents who visited woodland",
        y = NULL) +
-  theme_gss(grid = "x",
+  theme_gss(grid = "none",
             tick_mark = "x",
             legend.position = "none",
-            axis.line.y = element_blank(),
+            axis.line.x = element_line("#D9D9D9"),
             axis.text.y = element_blank(),
             font_size = 18)
 ```
@@ -506,28 +514,13 @@ q1_diffs <- q1_beta_binomial_model %>%
                  comparison = "pairwise")
 ```
 
-#### Figure 6: Posterior distribution of the <b style="color: white; background-color: #B78C01;" >difference</b> in proportions
+Some text introducing @tbl-3.
 
 ```{r}
-#| label: fig6
-q1_diffs |> 
-  ggplot(aes(x = .epred_prop)) +
-  stat_halfeye(fill = "#B78C01") +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  scale_x_continuous(labels = label_pp) +
-  labs(x = "Percentage point difference in proportions",
-       y = NULL) +
-  theme_gss(grid = "y",
-            tick_mark = "x",
-            font_size = 18,
-            legend.position = "none",
-            axis.text.y = element_blank())
-```
-
-#### Table 3:
-
-```{r}
-#| label: table3
+#| label: tbl-3
+#| tbl-cap: "Number of woodland visitors and summary of the posterior distribution by gender"
+#| echo: false
+#| message: false
 q1_beta_binomial_model %>% 
   epred_draws(newdata = q1_raw) %>% 
   mutate(.epred_prop = .epred / total) |> 
@@ -537,8 +530,8 @@ q1_beta_binomial_model %>%
   gt() |> 
   cols_hide(c(".row", ".width", ".point", ".interval")) |> 
   cols_label(gender = "Gender",
-             n = "Number of woodland visitors",
-             total = "Total number of respondents",
+             n = "Number of woodland visitors", # REMOVE
+             total = "Total number of respondents", # REMOVE
              y = "Median of posterior distribution",
              ymin = "Lower 95% credible interval",
              ymax = "Upper 95% credible interval") |> 
@@ -553,13 +546,37 @@ q1_beta_binomial_model %>%
               row_group.font.weight = "bold")
 ```
 
-#### Table 4: 
+The posterior distribution of the difference in proportion of men and women that visited woodland in the last few years is shown in @fig-5 and @tbl-4.
 
 ```{r}
-#| label: table4
+#| label: fig-5
+#| fig-cap: 'Posterior distribution of the <b style="color: white; background-color: #B78C01;" >difference</b> in proportions of men and women that visited woodland in the last few years'
+q1_diffs |> 
+  ggplot(aes(x = .epred_prop, fill = stat(abs(x) > 0.1))) +
+  stat_halfeye() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  scale_x_continuous(labels = label_pp) +
+  scale_fill_manual(values = c("#D9D9D9", "#B78C01")) +
+  labs(x = "Percentage point difference in proportions",
+       y = NULL) +
+  theme_gss(grid = "none",
+            tick_mark = "x",
+            legend.position = "none",
+            axis.line.x = element_line("#D9D9D9"),
+            axis.text.y = element_blank(),
+            font_size = 18)
+```
+
+@tbl-4 shows a summary of the posterior distribution.
+
+```{r}
+#| label: tbl-4
+#| tbl-cap: "Posterior distribution of the difference in proportions of men and women that visited woodland in the last few years"
+#| echo: false
 q1_diffs %>% 
   summarize(median = median_qi(.epred_prop),
-            p_gt_0 = sum(.epred_prop > 0) / n()) %>% 
+            pct_gt_0 = sum(.epred_prop > 0) / n(),
+            pct_rope = sum(abs(.epred_prop) > 0.1) / n()) %>% 
   unnest(median) |> 
   gt() |> 
   cols_hide(c(".width", ".point", ".interval")) |> 
@@ -567,23 +584,25 @@ q1_diffs %>%
              y = "Difference",
              ymin = "Lower 95% credible interval",
              ymax = "Upper 95% credible interval",
-             p_gt_0 = "Proportion of posterior draws > 0") |> 
-  fmt_percent(columns = c("y", "ymin", "ymax", "p_gt_0"),
+             pct_gt_0 = "Proportion of posterior draws > 0",
+             pct_rope = "Proportion of posterior draws outside ROPE") |> 
+  fmt_percent(columns = c("y", "ymin", "ymax", "pct_gt_0", "pct_rope"),
               decimals = 1) |> 
   opt_horizontal_padding(3) |> 
+  tab_footnote(footnote = "ROPE: Region of Practical Equivalence. Data that fall within ROPE (-10 pp to +10 pp) are practically equivalent to zero.") |> 
   tab_options(column_labels.font.weight = "bold",
               row_group.font.weight = "bold")
 ```
 
 ### Conclusion
 
-What’s our final answer to the question "Is the proportion of women that visited woodland in the last few years higher than the proportion of men?"?
+What's our final answer to the question "Is the proportion of women that visited woodland in the last few years higher than the proportion of men?"?
 
 Yes, it is.
 
 In an official report or article, we could write something like this:
 
-> In the UK, women are more likely to have visited woodland in the last few years compared to men. In 2023, on average, 75.3% (between 69.0% and 80.1%) of women visited woodland in the last few years, compared to 72.5% (between 65.8% and 77.5%) of men. There is a 95% posterior probability that the difference between these proportions is between -5.7 and 10.5 percentage points, with a median of 2.8 percentage points. This difference is small, however, there is a 84% chance that the difference is greater than zero.
+> In the UK, women are slightly more likely to have visited woodland in the last few years compared to men. In 2023, on average, 75.3% (between 69.0% and 80.1%) of women visited woodland in the last few years, compared to 72.5% (between 65.8% and 77.5%) of men. There is a 95% posterior probability that the difference between these proportions is between -5.7 and 10.5 percentage points, with a median of 2.8 percentage points.
 
 We can use the `hypothesis` function in the {brms} package to verify this:
 
@@ -593,15 +612,24 @@ hypothesis(q1_beta_binomial_model,
            "genderFemale > genderMale")
 ```
 
-In 84% of the draws, the proportion of women that visited woodland in the last few years in greater than the proportion of men. The evidence in favour of $\pi_{\text{woodland visitor}_{\text{female}}} > \pi_{\text{woodland visitor}_{\text{male}}}$ is 5.27 times greater than the evidence in favour of $\pi_{\text{woodland visitor}_{\text{female}}} < \pi_{\text{woodland visitor}_{\text{male}}}$.
+The output is verbose but in summary:
+
+There is an 84% chance that the proportion of women that visited woodland in the last few years is greater than the proportion of men (see right-most column in @tbl-4).
+
+The evidence in favour of $\pi_{\text{woodland visitor}_{\text{female}}} > \pi_{\text{woodland visitor}_{\text{male}}}$ is 5.27 times greater than the evidence in favour of $\pi_{\text{woodland visitor}_{\text{male}}} > \pi_{\text{woodland visitor}_{\text{female}}}$.
 
 # Analysis 2: support for new woodland creation among men and women
 
-For this question, we will look at the difference in the proportions of men vs. women that support (net agree = "strongly agree" + "tend to agree") more tree planting in response to the threat of climate change. The proportions are highlighted turquoise in Table x.
+## Introduction
+
+For this question, we will look at the difference in the proportions of men vs. women that support (net agree = "strongly agree" + "tend to agree") more tree planting in response to the threat of climate change.
+
+Let's wrangle the data into the correct shape.
 
 ```{r}
 #| label: tidy-q2-raw
-#| include: false
+#| echo: true
+#| message: false
 wc_df <- q2_raw |> 
   pivot_longer(cols = -support,
                names_to = "gender",
@@ -630,15 +658,17 @@ wc_df <- q2_raw |>
   arrange(support)
 ```
 
-#### Table 5: Contingency table showing the proportion of men and women that support afforestation, UK, 2023
+The results from the Public Opinion of Forestry 2023: UK survey are highlighted green in @tbl-5.
 
 ```{r}
-#| label: table5
+#| label: tbl-5
+#| tbl-cap: "Contingency table showing the proportion of men and women that support afforestation, UK, 2023"
 #| echo: false
 wc_df |> 
-  mutate(label = glue("{prop}<br><span style='font-size:70%'>({n})</span>",
+  mutate(label = glue("{prop}<br><span style='font-size:70%'>({n} of {total})</span>",
                      prop = label_percent()(prop),
-                     n = label_comma()(n))) |> 
+                     n = label_comma()(n),
+                     total = label_comma()(total))) |> 
   select(-n, -total, -prop) |> 
   mutate(gender = str_to_title(gender),
          support = as.character(support)) |> 
@@ -657,10 +687,11 @@ wc_df |>
   opt_horizontal_padding(3) |> 
   tab_options(column_labels.font.weight = "bold",
               row_group.font.weight = "bold") |> 
+  tab_footnote(footnote = "Source: Public Opinion of Forestry 2023: UK survey. Crown copyright © Forest Research (2023).") |> 
   tab_style(
     style = list(
-      cell_fill(color = colorspace::lighten("#28A197", 0.7)),
-      cell_text(color = "#28A197", weight = "bold")
+      cell_fill(color = colorspace::lighten("#384e1d", 0.7)),
+      cell_text(color = "#384e1d", weight = "bold")
     ),
     locations = list(
       cells_body(columns = 2:3, rows = 1)
@@ -677,9 +708,27 @@ wc_df |>
   )
 ```
 
-For the remaining analyses we won't mess around, we'll just get straight into the code.
+Our formal model can be written out as follows:
 
-This time we aren't going to bother with setting a prior for $\phi$.
+$$
+\begin{aligned}
+&\ \textbf{Estimand} \\
+\theta =&\ \pi_{\text{afforestation support}_\text{female}} - \pi_{\text{afforestation support}_\text{male}} \\[10pt]
+&\ \textbf{Beta-binomial model for female} \\
+y_{n \text{ afforestation support}_\text{female}} \sim&\ \operatorname{Binomial}(n_{\text{total}_\text{female}}, \pi_{\text{afforestation support}_\text{female}}) \\
+\pi_{\text{afforestation support}_\text{female}} \sim&\ \operatorname{Beta}(\alpha_\text{female}, \beta_\text{female}) \\[10pt]
+&\ \textbf{Beta-binomial model for male} \\
+y_{n \text{ afforestation support}_\text{male}} \sim&\ \operatorname{Binomial}(n_{\text{total}_\text{male}}, \pi_{\text{afforestation support}_\text{male}}) \\
+\pi_{\text{afforestation support}_\text{male}} \sim&\ \operatorname{Beta}(\alpha_\text{male}, \beta_\text{male}) \\[10pt]
+&\ \textbf{Priors} \\
+\alpha_\text{female}, \alpha_\text{male} =&\ 6 \\
+\beta_\text{female}, \beta_\text{male} =&\ 2
+\end{aligned}
+$$ 
+
+For the remaining analyses, we'll just get straight into the code.
+
+First, we need to create our data set. Let's filter for just those respondents that agree that a lot more trees should be planted and remove the rows with totals.
 
 ```{r}
 #| label: make-q2-df
@@ -688,7 +737,7 @@ q2_df <- wc_df |>
          gender %in% c("female", "male"))
 ```
 
-[Print the equations.]
+By passing our formula, data set and family to `get_prior()` we can see {brms}'s default priors.
 
 ```{r}
 #| label: q2-get-prior
@@ -697,6 +746,8 @@ get_prior(formula = bf(n | trials(total) ~ 0 + gender),
           family = beta_binomial(link = "identity",
                                  link_phi = "identity"))
 ```
+
+In the [Public Opinion of Forestry 2021: UK](https://www.gov.uk/government/statistics/public-opinion-of-forestry-2021-uk-and-england) survey, 83% of UK adults (aged 16+) agreed with the statement. A value of 80% will be our prior.
 
 ```{r}
 #| label: q2-set-prior
@@ -708,6 +759,7 @@ prior_q2 <- c(
 
 ```{r}
 #| label: q2-bb-model
+#| output: false
 q2_beta_binomial_model <- brm(
   bf(n | trials(total) ~ 0 + gender),
   data = q2_df,
@@ -723,33 +775,13 @@ q2_beta_binomial_model <- brm(
 )
 ```
 
-```{r}
-#| label: fig7-code
-#| eval: false
-q2_beta_binomial_model |> 
-  epred_draws(newdata = q2_df) %>% 
-  mutate(.epred_prop = .epred / total) %>% 
-  ggplot(aes(x = .epred_prop, y = gender, fill = gender)) +
-  stat_halfeye() +
-  scale_x_continuous(expand = expansion(mult = c(0, 0.04)),
-                     labels = label_percent(),
-                     limits = c(NA, 1)) +
-  scale_y_discrete(expand = expansion(mult = c(0.04, 0))) +
-  scale_fill_manual(values = c("#F4C2C2", "#89CFF0")) +
-  labs(x = "Proportion of respondents who support afforestation",
-       y = NULL) +
-  theme_gss(grid = "x",
-            tick_mark = "x",
-            legend.position = "none",
-            axis.line.y = element_blank(),
-            axis.text.y = element_blank(),
-            font_size = 18)
-```
+## Model results
 
-#### Figure 7: Posterior distributions of the proportion of <b style="color: white; background-color: #89CFF0;" >men</b> and <b style="color: white; background-color: #F4C2C2;">women</b> that support afforestation
+@fig-6 shows the posterior distributions of the proportion of men and women that support afforestation as a climate change mitigation strategy.
 
 ```{r}
-#| label: fig7
+#| label: fig-6
+#| fig-cap: 'Posterior distributions of the proportion of <b style="color: white; background-color: #89CFF0;" >men</b> and <b style="color: white; background-color: #F4C2C2;">women</b> that support afforestation'
 #| echo: false
 q2_beta_binomial_model |> 
   epred_draws(newdata = q2_df) %>% 
@@ -763,13 +795,15 @@ q2_beta_binomial_model |>
   scale_fill_manual(values = c("#F4C2C2", "#89CFF0")) +
   labs(x = "Proportion of respondents who support afforestation",
        y = NULL) +
-  theme_gss(grid = "x",
+  theme_gss(grid = "none",
             tick_mark = "x",
             legend.position = "none",
-            axis.line.y = element_blank(),
+            axis.line.x = element_line("#D9D9D9"),
             axis.text.y = element_blank(),
             font_size = 18)
 ```
+
+Again, let's extract the draws and explore the difference in the proportions.
 
 ```{r}
 #| label: q2-compare-draws
@@ -784,27 +818,13 @@ q2_diffs <- q2_beta_binomial_model %>%
   ungroup()
 ```
 
-#### Figure 8: Posterior distribution of the <b style="color: white; background-color: #B78C01;" >difference</b> in proportions
+@tbl-6 shows a summary of the posterior distribution. Recall our prior (80%) was slightly lower than the survey results in 2023. Our prior belief has been updated based on the survey results, and as a result our posterior is also slightly lower (less than 0.1 pp for men and women).
 
 ```{r}
-#| label: fig8
-q2_diffs |> 
-  ggplot(aes(x = .epred_prop)) +
-  stat_halfeye(fill = "#B78C01") +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  scale_x_continuous(labels = label_pp) +
-  labs(x = "Percentage point difference in proportions",
-       y = NULL) +
-  theme_gss(grid = "x",
-            font_size = 18,
-            legend.position = "none",
-            axis.text.y = element_blank())
-```
-
-#### Table 6:
-
-```{r}
-#| label: table6
+#| label: tbl-6
+#| tbl-cap: "Number of tree planting supporters and summary of the posterior distribution by gender"
+#| echo: false
+#| message: false
 q2_beta_binomial_model %>% 
   epred_draws(newdata = q2_df) %>% 
   mutate(.epred_prop = .epred / total) |> 
@@ -831,10 +851,31 @@ q2_beta_binomial_model %>%
               row_group.font.weight = "bold")
 ```
 
-#### Table 7: 
+@fig-7 and @tbl-7 show the posterior distribution of the difference in proportions. The posterior distribution is shown in grey and gold: the area in grey falls within the Region of Practical Equivalence or ROPE (between -10 pp and +10 pp) where the difference is indistinguishable from zero; the area in gold is outside ROPE and can be thought of as being "significantly" different from zero.
 
 ```{r}
-#| label: table7
+#| label: fig-7
+#| fig-cap: 'Posterior distribution of the <b style="color: white; background-color: #B78C01;" >difference</b> in proportions'
+q2_diffs |> 
+  ggplot(aes(x = .epred_prop, fill = stat(abs(x) > 0.1))) +
+  stat_halfeye() +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  scale_x_continuous(labels = label_pp) +
+  scale_fill_manual(values = c("#D9D9D9", "#B78C01")) +
+  labs(x = "Percentage point difference in proportions",
+       y = NULL) +
+  theme_gss(grid = "none",
+            tick_mark = "x",
+            legend.position = "none",
+            axis.line.x = element_line("#D9D9D9"),
+            axis.text.y = element_blank(),
+            font_size = 18)
+```
+
+```{r}
+#| label: tbl-7
+#| tbl-cap: "Posterior distribution of the difference in proportions"
+#| echo: false
 q2_diffs %>% 
   summarize(median = median_qi(.epred_prop),
             p_gt_0 = sum(.epred_prop > 0) / n(),
@@ -852,16 +893,20 @@ q2_diffs %>%
   opt_horizontal_padding(3) |> 
   tab_options(column_labels.font.weight = "bold",
               row_group.font.weight = "bold") |> 
-  tab_footnote(footnote = "ROPE: Region of Practical Equivalence. Data that fall within ROPE are practically equivalent to zero.")
+  tab_footnote(footnote = "ROPE: Region of Practical Equivalence. Data that fall within ROPE (-10 pp to +10 pp) are practically equivalent to zero.")
 ```
 
-### Conclusion
+## Conclusion
 
-> Women are slightly more likely to support tree planting than men in the UK. On average, 84.7% (between 79.0% and 88.4%) of women supported tree planting compared to 82.2% (between 76.9% and 86.6%) of men. There is a 95% posterior probability that the difference between these proportions is between -4.1 and 8.6 percentage points, with a median of 2.4 percentage points. While the difference is small, there is a 86% chance that the difference is not zero. However, support for the hypothesis that support by one gender is much greater than the other is weak.
+We can summarise our findings from analysis 2 by saying:
+
+> Women are slightly more likely to support tree planting than men in the UK. On average, 84.7% (between 79.0% and 88.4%) of women supported tree planting compared to 82.2% (between 76.9% and 86.6%) of men. There is a 95% posterior probability that the difference between these proportions is between -4.1 and 8.6 percentage points, with a median of 2.4 percentage points. While the difference is small, there is a 86% chance that the difference is greater than zero. However, only 1.4% of draws are both greater than zero and outside ROPE.
 
 # Analysis 3: support for new woodland creation in the UK population
 
-Lastly, for this question we will look at... (pink highlighted cells in Table x).
+## Introduction
+
+Lastly, for this question we will look at the pink highlighted cells in @tbl-5.
 
 Again, we'll call the estimand $\theta$ but this time we have three different versions of it:
 
@@ -877,9 +922,10 @@ $$
 \theta_{ND} = \pi_{\text{neither}} - \pi_{\text{disagree}}
 $$
 
-[Equations.]
+As we are interested in the population as a whole we need to filter for just the totals rows and remove the `gender` column.
 
 ```{r}
+#| label: make-q3-df
 q3_df <- wc_df |> 
   ungroup() |> 
   filter(gender == "total") |> 
@@ -887,15 +933,19 @@ q3_df <- wc_df |>
   mutate(across(where(is.factor), as.character))
 ```
 
-### Setting priors
+## Running the model
+
+First, let's explore...
 
 ```{r}
-#| label: q2-get-prior
+#| label: q3-get-prior
 get_prior(formula = bf(n | trials(total) ~ 0 + support),
           data = q3_df,
           family = beta_binomial(link = "identity",
                                  link_phi = "identity"))
 ```
+
+...and then set our priors. Note that in this final example we use a Beta(1,1), i.e., a flat, prior where all possible values between 0% and 100% are equally likely. The precision parameter remains the same.
 
 ```{r}
 #| label: q3-set-prior
@@ -905,9 +955,11 @@ prior_q3 <- c(
 )
 ```
 
-### Run the model:
+## Model results
 
 ```{r}
+#| label: q3-bb-model
+#| output: false
 q3_beta_binomial_model <- brm(
   bf(n | trials(total) ~ 0 + support),
   data = q3_df,
@@ -923,46 +975,69 @@ q3_beta_binomial_model <- brm(
 )
 ```
 
+To make it easier to interpret, let's set three different colours for agree, neither and disagree.
+
 ```{r}
-q3_beta_binomial_model |> 
-  epred_draws(newdata = q3_df) |> 
-  mutate(.epred_prop = .epred / total) |> 
-  group_by(support) %>% 
-  median_qi(.epred_prop)
+#| label: palette
+col_agree <- "#2188a2"
+col_neither <- "#4B5A20"
+col_disagree <- "#cd6b61"
 ```
 
-```{r}
-col_agree <- "#e1ad01"
-col_neither <- "#73a580"
-col_disagree <- "#3e363f"
-```
-
-#### Figure 9: Posterior distributions of the proportion of people that <b style="color: white; background-color: #e1ad01;" >agree</b>, <b style="color: white; background-color: #73a580;">neither agree nor disagree</b> and <b style="color: white; background-color: #3e363f;">disagree</b> with new woodland creation
+@fig-8 and @tbl-8 show the posterior distributions of the proportion of people that agree, neither agree nor disagree and disagree with more tree planting.
 
 ```{r}
-#| label: fig9
+#| label: fig-8
+#| fig-cap: 'Posterior distributions of the proportion of people that <b style="color: white; background-color: #2188a2;" >agree</b>, <b style="color: white; background-color: #4B5A20;">neither agree nor disagree</b> and <b style="color: white; background-color: #cd6b61;">disagree</b> with new woodland creation'
 q3_beta_binomial_model |> 
   epred_draws(newdata = q3_df) %>% 
   mutate(.epred_prop = .epred / total) %>% 
   mutate(support = factor(support, levels = c("Agree",
                                               "Neither",
                                               "Disagree"))) |> 
-  ggplot(aes(x = .epred_prop, fill = support)) +
+  ggplot(aes(x = .epred_prop, y = fct_rev(support), fill = support)) +
   stat_halfeye(show.legend = FALSE) +
   scale_x_continuous(expand = expansion(mult = c(0, 0.04)),
                      labels = label_percent(),
                      limits = c(0, 1)) +
   scale_fill_manual(values = c(col_agree, col_neither, col_disagree)) +
-  labs(x = "Posterior probability",
-     y = NULL) +
-  facet_wrap(vars(support),
-             ncol = 1) +
-  theme_gss(grid = "x",
+  labs(x = "Proportion of respondents who support afforestation",
+       y = NULL) +
+  theme_gss(grid = "none",
+            tick_mark = "x",
+            legend.position = "none",
+            axis.line.x = element_line("#D9D9D9"),
             axis.text.y = element_blank(),
-            panel.grid.major.y = element_blank())
+            font_size = 18)
 ```
 
 ```{r}
+#| label: tbl-8
+#| tbl-cap: "Summary of the posterior distribution by level of support for more tree planting"
+q3_beta_binomial_model |> 
+  epred_draws(newdata = q3_df) |> 
+  mutate(.epred_prop = .epred / total) |> 
+  group_by(support) %>% 
+  median_qi(.epred_prop) |> 
+  mutate(support = fct_reorder(support, c("Agree", "Neither", "Disagree"))) |> 
+  arrange(support) |> 
+  gt() |> 
+  cols_hide(c(".width", ".point", ".interval")) |> 
+  cols_label(support = "Support",
+             .epred_prop = "Median of posterior distribution",
+             .lower = "Lower 95% credible interval",
+             .upper = "Upper 95% credible interval") |> 
+  fmt_percent(columns = c("support", ".epred_prop", ".lower", ".upper"),
+              decimals = 1) |> 
+  opt_horizontal_padding(3) |> 
+  tab_footnote(footnote = "Source: Public Opinion of Forestry 2023: UK survey. Crown copyright © Forest Research (2023).") |> 
+  tab_options(column_labels.font.weight = "bold",
+              row_group.font.weight = "bold")
+```
+
+```{r}
+#| label: q3-compare-draws
+#| include: false
 q3_beta_binomial_diffs <- q3_beta_binomial_model |> 
   epred_draws(newdata = q3_df) %>% 
   mutate(.epred_prop = .epred / total) %>% 
@@ -970,37 +1045,64 @@ q3_beta_binomial_diffs <- q3_beta_binomial_model |>
   compare_levels(.epred_prop,
                  by = support,
                  comparison = list(c("Agree", "Neither"), c("Agree", "Disagree"), c("Neither", "Disagree"))) |> 
-   mutate(support = factor(support, levels = c("Agree - Disagree",
-                                               "Agree - Neither",
-                                               "Neither - Disagree")))
+  mutate(support = str_replace_all(support, "-", "vs."),
+         support = factor(support, levels = c("Agree vs. Disagree",
+                                              "Agree vs. Neither",
+                                              "Neither vs. Disagree")))
 ```
 
-#### Figure 10: 
+@fig-9 and @tbl-9 show the posterior distribution of the difference in proportions between agree, neither and disagree. Again, like @fig-7, the posterior distribution is coloured grey and gold to show the area inside and outside the Region of Practical Equivalence (ROPE), respectively.
 
 ```{r}
-#| label: fig10
+#| label: fig-9
+#| fig-cap: 'Posterior distribution of the difference in proportions between those that agree, neither agree or disagree and disagree with more tree planting'
 q3_beta_binomial_diffs |> 
-  ggplot(aes(x = .epred_prop, fill = support, pattern_fill = support)) +
-  # stat_halfeye(show.legend = FALSE) +
-  geom_density_pattern(
-    pattern = "stripe", # Stripes
-    pattern_density = 0.5, # Take up 50% of the pattern (i.e., striped)
-    pattern_spacing = 0.2, # Thicker stripes
-    pattern_size = NA, # No border on the stripes
-    trim = TRUE,# Trim the ends of the distributions
-    linewidth = NA # No border on the distributions
-  ) +
+  ggplot(aes(x = .epred_prop, y = fct_rev(support), fill = stat(abs(x) > 0.1))) +
+  stat_halfeye() +
   geom_vline(xintercept = 0, linetype = "dashed") +
-  scale_x_continuous(expand = expansion(mult = c(0, 0.04)),
-                     labels = label_pp) +
-  scale_fill_manual(values = c(col_agree, col_neither, col_disagree)) +
-  scale_pattern_fill_manual(values = c(col_disagree, col_agree, col_neither)) +
-  guides(fill = "none",
-         pattern_fill = "none") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.08)),
+                     labels = label_pp,
+                     limits = c(-0.5, 1)) +
+  scale_fill_manual(values = c("#D9D9D9", "#B78C01")) +
   labs(x = "Percentage point difference in proportions",
        y = NULL) +
-  facet_wrap(vars(support), ncol = 1) +
-  theme_gss(grid = "x",
-            axis.text.y = element_blank(),
-            panel.grid.major.y = element_blank())
+  theme_gss(grid = "none",
+            tick_mark = "x",
+            legend.position = "none",
+            axis.line.x = element_line("#D9D9D9"),
+            font_size = 18)
 ```
+
+```{r}
+#| label: tbl-9
+#| tbl-cap: "Posterior distribution of the difference in proportions"
+q3_beta_binomial_diffs |> 
+  summarize(median = median_qi(.epred_prop),
+            pct_gt_0 = sum(.epred_prop > 0) / n(),
+            pct_rope = sum(abs(.epred_prop) > 0.1) / n()) %>% 
+  unnest(median) |> 
+  gt() |> 
+  cols_hide(c(".width", ".point", ".interval")) |> 
+  cols_label(support = "Support",
+             y = "Difference",
+             ymin = "Lower 95% credible interval",
+             ymax = "Upper 95% credible interval",
+             pct_gt_0 = "Proportion of draws > 0",
+             pct_rope = "Proportion of draws outside ROPE") |> 
+  fmt_percent(columns = c("y", "ymin", "ymax", "pct_gt_0", "pct_rope"),
+              decimals = 1) |> 
+  opt_horizontal_padding(3) |> 
+  tab_options(column_labels.font.weight = "bold",
+              row_group.font.weight = "bold") |> 
+  tab_footnote(footnote = "ROPE: Region of Practical Equivalence. Data that fall within ROPE (-10 pp to +10 pp) are practically equivalent to zero.")
+```
+
+## Conclusion
+
+From the results of analysis 3, we can conclude that:
+
+> People in the UK overwhelmingly agree that a lot more trees should be planted in response to the threat of climate change. On average, 83.5% of respondents agree (with a 95% credible interval of between 78.1% and 87.2%), compared to 11.5% that neither agree nor disagree (8.6% to 16.2%) and 2.6% that disagree (1.4% to 6.3%).
+>
+> There is no substantial difference in proportions between those that answered neither agree nor disagree and disagree. The posterior median difference is between 4.4 and 13.0 percentage points, with a median of 8.9 percentage points. While there’s a 99.5% probability that this difference is greater than 0, there's a 79.5% chance that the difference is indistinguishable from zero.
+>
+> There is a clear substantial difference between the proportion that support more tree planting and the other two responses. The posterior median difference between agree and disagree is between 73.4 and 84.3 percentage points (median = 80.8), while the difference between agree and neither is between 63.5 and 76.7 percentage points (median = 71.9). The probability that each of these differences are greater than 0 is 100%.
